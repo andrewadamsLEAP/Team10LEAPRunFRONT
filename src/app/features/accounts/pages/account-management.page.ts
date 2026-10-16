@@ -2,17 +2,17 @@ import { Component, inject } from "@angular/core"
 import { CurrencyPipe } from "@angular/common"
 import { FormsModule } from "@angular/forms"
 import { ActivatedRoute } from "@angular/router"
-import Store from "./store"
-import { Account } from "./data"
+import Store from "../../../core/state/portfolio.store"
+import { Account } from "../../../core/models/data"
 
 @Component({
-  selector: "app-accounts",
+  selector: "app-account-management-page",
   standalone: true,
   imports: [CurrencyPipe, FormsModule],
   template: `
-    <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">{{ admin ? 'Account management' : 'All-client reporting' }}</span><h1>{{ reporters ? 'Reporter accounts' : 'Client accounts' }}</h1><p>{{ admin ? 'Create, edit, and manage account access.' : 'Read-only client directory.' }}</p></div>@if (admin) { <button class="primary-button" (click)="create()">Add account</button> }</div>
-      <section class="surface data-surface"><div class="data-table accounts-table" [class.admin]="admin"><div class="data-row data-head"><span>Username</span><span>Full name</span>@if (admin) { <span>Email</span><span>Cash</span> }<span>Status</span>@if (admin) { <span>Actions</span> }</div>
-        @for (a of accounts; track a.id) { <div class="data-row"><strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span>@if (admin) { <span>{{ a.email || '—' }}</span><span>{{ a.cash | currency:'USD' }}</span> }<span [class]="'status ' + a.status.toLowerCase()">{{ a.status }}</span>@if (admin) { <div class="row-actions"><button (click)="edit(a)">Edit</button><button (click)="toggle(a)">{{ a.status === 'Active' ? 'Suspend' : 'Activate' }}</button><button class="danger" (click)="remove(a)">Delete</button></div> }</div> } @empty { <p class="empty-state">No accounts yet.</p> }
+    <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">Account management</span><h1>{{ reporters ? 'Reporter accounts' : 'Client accounts' }}</h1><p>Create, edit, and manage account access.</p></div><button class="primary-button" (click)="create()">Add account</button></div>
+      <section class="surface data-surface"><div class="data-table accounts-table admin"><div class="data-row data-head"><span>Username</span><span>Full name</span><span>Email</span><span>Cash</span><span>Status</span><span>Actions</span></div>
+        @for (a of accounts; track a.id) { <div class="data-row"><strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span><span>{{ a.email || '—' }}</span><span>{{ a.cash | currency:'USD' }}</span><span [class]="'status ' + a.status.toLowerCase()">{{ a.status }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button (click)="toggle(a)">{{ a.status === 'Active' ? 'Suspend' : 'Activate' }}</button><button class="danger" (click)="remove(a)">Delete</button></div></div> } @empty { <p class="empty-state">No accounts yet.</p> }
       </div></section>
     </div>
     @if (draft; as d) {
@@ -25,7 +25,7 @@ import { Account } from "./data"
     @if (deleting; as a) { <div class="modal-backdrop"><section class="account-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title"><h2 id="delete-title">Delete {{ a.username }}?</h2><p>This removes account access. Historical reporting is retained.</p><div class="modal-actions"><button class="secondary-button" (click)="deleting = null">Cancel</button><button class="primary-button" (click)="confirmDelete()">Delete account</button></div></section></div> }
   `,
 })
-export default class Accounts {
+export default class AccountManagementPage {
   store = inject(Store)
   route = inject(ActivatedRoute)
   get reporters() {
@@ -36,9 +36,6 @@ export default class Accounts {
   }
   get accounts() {
     return this.store[this.key]()
-  }
-  get admin() {
-    return this.store.session()?.role === "admin"
   }
   draft: Account | null = null
   deleting: Account | null = null
@@ -68,10 +65,10 @@ export default class Accounts {
     })
   }
   remove(a: Account) {
-    if (this.admin) this.deleting = a
+    this.deleting = a
   }
   confirmDelete() {
-    if (!this.admin || !this.deleting) return
+    if (!this.deleting) return
     this.store[this.key].update((items) =>
       items.filter((a) => a.id !== this.deleting!.id),
     )

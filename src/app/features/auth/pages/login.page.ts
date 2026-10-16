@@ -1,10 +1,10 @@
 import { Component, inject } from "@angular/core"
 import { FormsModule } from "@angular/forms"
 import { Router } from "@angular/router"
-import Store from "./store"
-import { Role } from "./data"
-import Brand from "./brand"
-import Chart from "./chart"
+import Store from "../../../core/state/portfolio.store"
+import { Role } from "../../../core/models/data"
+import Brand from "../../../shared/brand/brand.component"
+import Chart from "../../../shared/charts/price-chart.component"
 
 @Component({
   selector: "app-auth",

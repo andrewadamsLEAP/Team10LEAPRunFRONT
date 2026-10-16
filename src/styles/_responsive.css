@@ -1,0 +1,84 @@
+﻿@media (max-width: 1050px) {
+  .client-nav button { padding-inline: 7px; font-size: 0; }
+  .client-nav button svg { width: 18px; height: 18px; }
+  .portfolio-hero { grid-template-columns: 230px 1fr; }
+  .portfolio-stats { display: none; }
+  .content-grid { grid-template-columns: 1fr; }
+  .home-sidebar { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  .ticker-heading { min-width: 230px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 780px) {
+  .auth-page { grid-template-columns: 1fr; }
+  .auth-brand-panel { display: none; }
+  .auth-form-panel { min-height: 100vh; padding: 24px; display: flex; flex-direction: column; justify-content: center; }
+  .mobile-brand { display: block; width: min(400px, 100%); margin: 0 auto 35px; }
+  .client-header { padding: 0 14px; gap: 9px; }
+  .menu-button { display: grid; }
+  .client-nav { position: absolute; top: 64px; left: 10px; width: 205px; height: auto; padding: 7px; border: 1px solid var(--line); border-radius: 7px; background: white; box-shadow: 0 15px 35px #173b2b25; display: none; flex-direction: column; align-items: stretch; }
+  .client-nav.open { display: flex; }
+  .client-nav button { width: 100%; height: 40px; padding-inline: 10px; border: 0; border-radius: 5px; font-size: 10px; }
+  .header-search { width: auto; flex: 1; margin-left: 0; }
+  .client-account > span { display: none; }
+  .page-wrap { padding-inline: 14px; }
+  .portfolio-hero { grid-template-columns: 1fr; gap: 8px; }
+  .portfolio-hero .price-chart { height: 120px; }
+  .portfolio-copy .period-tabs { margin-top: 15px; }
+  .home-sidebar { grid-template-columns: 1fr; }
+  .ticker-hero { flex-wrap: wrap; padding: 20px 4px; gap: 15px; }
+  .ticker-heading { width: 100%; }
+  .ticker-price { padding-left: 0; border: 0; }
+  .trade-actions { margin-left: auto; }
+  .ticker-layout { grid-template-columns: 1fr; }
+  .employee-sidebar { width: 65px; padding-inline: 10px; }
+  .employee-sidebar > .brand strong, .workspace-label, .employee-sidebar nav button:not(.active) { font-size: 0; }
+  .employee-sidebar > .brand { padding-left: 8px; }
+  .employee-sidebar nav button { justify-content: center; padding: 0; font-size: 0; }
+  .employee-sidebar nav button.active { font-size: 0; }
+  .employee-user > span, .employee-user > button { display: none; }
+  .employee-main { width: calc(100% - 65px); margin-left: 65px; }
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px) {
+  .client-header .brand strong { display: none; }
+  .client-account .user-avatar { display: none; }
+  .page-intro { align-items: center; }
+  .page-intro h1 { font-size: 20px; }
+  .portfolio-hero { padding: 19px; }
+  .ticker-hero { align-items: flex-end; }
+  .ticker-heading { min-width: 100%; }
+  .trade-actions { width: 100%; }
+  .trade-actions button { flex: 1; }
+  .chart-header { align-items: flex-start; padding-top: 15px; }
+  .chart-surface .price-chart { height: 230px; }
+  .funds-panel { flex-direction: column; align-items: stretch; }
+  .fund-input { width: 100%; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .employee-main > header { padding-inline: 14px; }
+}
+
+app-root, app-shell, app-auth, app-orders-page, app-transactions-page,
+app-holdings-page, app-market-list-page, app-ticker-detail-page, app-trade-page,
+app-dashboard-page, app-client-analytics-page, app-analytics,
+app-account-directory-page, app-account-management-page { display: block; }
+a { color: inherit; text-decoration: none; }
+.empty-state { padding: 28px; color: var(--muted); font-size: 12px; }
+.client-nav a { display: flex; align-items: center; padding: 12px; font-size: 11px; }
+.client-nav a.active { color: var(--green-dark); border-bottom: 2px solid var(--green); }
+.employee-sidebar nav a { padding: 14px; border-radius: 6px; font-size: 11px; }
+.employee-sidebar nav a.active { background: var(--green-soft); color: var(--green-dark); }
+.mini-list-row { cursor: pointer; }
+.auth-brand-panel { justify-content: center; }
+.auth-message { margin: auto 0 34px; }
+.auth-market-card { margin-bottom: auto; }
+.client-account { margin-left: auto; }
+.section-title > a { color: var(--muted); font-size: 8px; }
+@media (max-width: 780px) {
+  .employee-sidebar { width: 140px; }
+  .employee-sidebar > app-brand .brand strong { display: none; }
+  .employee-sidebar nav a { padding: 12px 6px; font-size: 10px; }
+  .employee-main { width: calc(100% - 140px); margin-left: 140px; }
+  .employee-user > button { display: block; margin: auto; }
+}
