@@ -1,0 +1,33 @@
+﻿.narrow-page { width: min(560px, calc(100% - 28px)); margin: 0 auto; padding: 27px 0 50px; }
+.back-button { margin-bottom: 13px; border: 0; background: transparent; color: #637169; font-size: 9px; cursor: pointer; }
+.trade-card, .confirm-card { padding: 25px; }
+.trade-card-title { display: flex; align-items: center; gap: 11px; margin-bottom: 20px; }
+.trade-card-title h1 { margin: 2px 0 0; font: 700 18px "Manrope"; }
+.trade-card-title > strong { margin-left: auto; font: 600 16px "Manrope"; }
+.side-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 18px; padding: 4px; border-radius: 7px; background: #eff3f1; }
+.side-switch button { height: 34px; border: 0; border-radius: 5px; background: transparent; color: #77847d; font-size: 10px; }
+.side-switch button.active.buy { background: white; color: var(--green-dark); box-shadow: 0 1px 5px #173b2b15; }
+.side-switch button.active.sell { background: white; color: var(--red); box-shadow: 0 1px 5px #173b2b15; }
+.form-field { display: block; margin-bottom: 14px; }
+.form-field select { appearance: none; }
+.quantity-input { padding: 0 11px; display: flex; align-items: center; }
+.quantity-input input { width: 100%; border: 0; background: transparent; outline: 0; }
+.quantity-input.static-field { color: var(--ink); font-weight: 600; background: #f4f7f5; }
+.quantity-input b { color: #748179; font-size: 9px; }
+.quick-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: -5px 0 18px; }
+.quick-buttons button { height: 27px; border: 1px solid var(--line); border-radius: 4px; background: white; color: #75827b; font-size: 8px; cursor: pointer; }
+.order-details { padding: 14px 0; border-block: 1px solid var(--line); margin-bottom: 17px; display: flex; flex-direction: column; gap: 10px; }
+.order-details div, .confirmation-details div { display: flex; justify-content: space-between; color: #77847d; font-size: 10px; }
+.order-details strong, .confirmation-details strong { color: var(--ink); }
+.full-button { width: 100%; }
+.full-button.sell { background: var(--red); }
+.confirm-card { text-align: center; }
+.confirm-icon { width: 48px; height: 48px; margin: 0 auto 12px; border-radius: 50%; background: var(--green-soft); color: var(--green); display: grid; place-items: center; }
+.confirm-card h1 { margin: 6px 0; font: 600 22px "Manrope"; }
+.confirm-card > p { margin: 0; color: var(--muted); font-size: 9px; }
+.confirmation-details { margin: 21px 0 18px; padding: 5px 14px; border: 1px solid var(--line); border-radius: 7px; background: #fafcfb; text-align: left; }
+.confirmation-details div { min-height: 37px; align-items: center; border-bottom: 1px solid #e8eeeb; }
+.confirmation-details div:last-child { border: 0; }
+.confirmation-details .total-row { min-height: 48px; font-size: 11px; }
+.text-button { margin-top: 10px; border: 0; background: transparent; color: #718078; font-size: 9px; cursor: pointer; }
+

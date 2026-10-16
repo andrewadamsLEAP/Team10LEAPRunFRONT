@@ -5,8 +5,8 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from "@angular/router"
-import Store from "./store"
-import Brand from "./brand"
+import Store from "../../../core/state/portfolio.store"
+import Brand from "../../../shared/brand/brand.component"
 
 @Component({
   selector: "app-shell",

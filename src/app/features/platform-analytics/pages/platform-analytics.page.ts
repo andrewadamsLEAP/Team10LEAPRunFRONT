@@ -1,7 +1,7 @@
 import { Component, inject } from "@angular/core"
 import { CurrencyPipe } from "@angular/common"
-import Store from "./store"
-import Chart from "./chart"
+import Store from "../../../core/state/portfolio.store"
+import Chart from "../../../shared/charts/price-chart.component"
 
 @Component({
   selector: "app-analytics",

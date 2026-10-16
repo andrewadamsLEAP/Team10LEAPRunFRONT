@@ -1,7 +1,7 @@
 import { Component, provideZonelessChangeDetection } from "@angular/core"
 import { bootstrapApplication } from "@angular/platform-browser"
 import { provideRouter, RouterOutlet, withHashLocation } from "@angular/router"
-import { routes } from "./routes"
+import { routes } from "./app/app.routes"
 
 @Component({
   selector: "app-root",

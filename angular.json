@@ -4,8 +4,8 @@
   "projects": {
     "veridian-angular": {
       "projectType": "application",
-      "root": ".",
-      "sourceRoot": ".",
+      "root": "src",
+      "sourceRoot": "src",
       "prefix": "app",
       "architect": {
         "build": {
@@ -13,10 +13,10 @@
           "options": {
             "outputPath": "dist/veridian",
             "index": "index.html",
-            "browser": "main.ts",
+            "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "assets": [],
-            "styles": ["styles.css"]
+            "styles": ["src/styles/styles.css"]
           },
           "configurations": {
             "development": {},

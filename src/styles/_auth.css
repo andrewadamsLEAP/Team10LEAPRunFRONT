@@ -1,0 +1,32 @@
+﻿.auth-page { min-height: 100vh; display: grid; grid-template-columns: minmax(400px, .9fr) 1.1fr; }
+.auth-brand-panel { padding: 38px clamp(36px, 6vw, 86px); background: #113d2e; color: white; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.auth-brand-panel::before { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 50%; border: 1px solid #5bc49c20; top: 8%; left: 35%; box-shadow: 0 0 0 80px #46a98208, 0 0 0 160px #46a98206; }
+.auth-brand-panel .brand { color: white; position: relative; }
+.auth-brand-panel .brand-bars i { background: #54d9a9; }
+.auth-message { margin: auto 0 34px; max-width: 560px; position: relative; }
+.auth-message .eyebrow { color: #72dab4; }
+.auth-message h1 { margin: 15px 0; font: 600 clamp(35px, 4.5vw, 64px)/1.08 "Manrope"; letter-spacing: -.055em; }
+.auth-message p { max-width: 470px; color: #b9d2c9; font-size: 14px; line-height: 1.7; }
+.auth-market-card { width: min(460px, 100%); padding: 17px 18px 5px; border: 1px solid #ffffff1f; border-radius: 9px; background: #ffffff0c; backdrop-filter: blur(6px); position: relative; }
+.auth-market-card > div:first-child { display: flex; justify-content: space-between; color: #c3d8d0; font-size: 10px; }
+.auth-market-card > div:first-child b { color: #72dab4; text-transform: uppercase; font-size: 8px; }
+.pulse-stats { margin-top: 15px; display: flex; justify-content: space-between; color: #fff; font-size: 10px; }
+.pulse-stats span { display: flex; flex-direction: column; gap: 4px; }
+.pulse-stats em { color: #65d6ad; font-style: normal; font-size: 9px; }
+.auth-market-card .price-chart { height: 80px; }
+.auth-form-panel { display: grid; place-items: center; padding: 40px; background: #f8faf9; }
+.mobile-brand { display: none; }
+.auth-card { width: min(400px, 100%); }
+.auth-card h2 { margin: 8px 0; font: 600 28px "Manrope"; letter-spacing: -.04em; }
+.auth-card > p { margin: 0 0 25px; color: var(--muted); font-size: 12px; }
+.role-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 4px; margin-bottom: 18px; background: #edf2ef; border-radius: 7px; }
+.role-picker button { height: 32px; border: 0; border-radius: 5px; background: transparent; color: #6c7a72; text-transform: capitalize; font-size: 10px; cursor: pointer; }
+.role-picker button.active { background: white; color: var(--green-dark); font-weight: 700; box-shadow: 0 1px 5px #173b2b15; }
+.auth-card label { display: block; margin-bottom: 14px; }
+.auth-card label span, .form-field > span { display: block; margin-bottom: 7px; color: #59675f; font-size: 10px; font-weight: 600; }
+.auth-card input, .form-field select, .quantity-input { width: 100%; height: 43px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); font-size: 11px; }
+.form-error { margin: 4px 0 12px; padding: 9px 11px; border-radius: 5px; background: #fcebed; color: #a63d45; font-size: 9px; }
+.auth-submit { width: 100%; margin-top: 5px; }
+.auth-switch { margin-top: 18px; color: var(--muted); text-align: center; font-size: 10px; }
+.auth-switch button { border: 0; background: none; color: var(--green-dark); font-weight: 700; cursor: pointer; }
+

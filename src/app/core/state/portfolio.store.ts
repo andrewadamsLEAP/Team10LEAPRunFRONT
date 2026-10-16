@@ -8,7 +8,7 @@ import {
   initialOrders,
   initialReporters,
   initialTransactions,
-} from "./data"
+} from "../models/data"
 
 export type Position = {
   client: string

@@ -14,7 +14,10 @@ try {
   )
   for (const name of ["data", "store"]) {
     const source = await readFile(
-      new URL(`../${name}.ts`, import.meta.url),
+      new URL(
+        `../src/app/${name === "data" ? "core/models/data" : "core/state/portfolio.store"}.ts`,
+        import.meta.url,
+      ),
       "utf8",
     )
     const { outputText } = ts.transpileModule(source, {
@@ -26,7 +29,10 @@ try {
     })
     await writeFile(
       join(temporary, `${name}.mjs`),
-      outputText.replaceAll('"./data"', '"./data.mjs"'),
+      outputText.replaceAll(
+        name === "store" ? '"../models/data"' : '"./data"',
+        name === "store" ? '"./data.mjs"' : '"./data.mjs"',
+      ),
     )
   }
   const { default: Store } = await import(

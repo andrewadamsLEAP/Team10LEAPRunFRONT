@@ -1,0 +1,39 @@
+﻿@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700&display=swap");
+
+
+:root {
+  font-family: "DM Sans", sans-serif;
+  color: #17221d;
+  background: #f4f7f5;
+  font-synthesis: none;
+  --green: #159a6e;
+  --green-dark: #0d7653;
+  --green-soft: #eaf6f0;
+  --red: #d5535d;
+  --ink: #17221d;
+  --muted: #748179;
+  --line: #dfe7e2;
+  --surface: #fff;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: #f4f7f5; }
+button, input, select { font: inherit; }
+button { color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.positive { color: var(--green) !important; }
+.negative { color: var(--red) !important; }
+.eyebrow { display: block; color: var(--green-dark); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; font-weight: 700; }
+.primary-button, .secondary-button { height: 38px; padding: 0 15px; border-radius: 6px; border: 0; background: var(--green); color: white; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+.primary-button:hover { background: var(--green-dark); }
+.primary-button:disabled { opacity: .5; cursor: not-allowed; }
+.secondary-button { border: 1px solid var(--line); background: white; color: #526159; }
+.surface { background: white; border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 3px 16px #173b2b08; overflow: hidden; }
+
+.brand { display: flex; align-items: center; gap: 8px; color: #153f30; }
+.brand strong { font: 700 14px "Manrope"; letter-spacing: .09em; }
+.brand-bars { width: 19px; height: 24px; display: flex; align-items: flex-end; gap: 2px; }
+.brand-bars i { width: 5px; height: 13px; background: var(--green); border-radius: 1px; }
+.brand-bars i:nth-child(2) { height: 21px; }
+.brand-bars i:nth-child(3) { height: 8px; opacity: .5; }
+
