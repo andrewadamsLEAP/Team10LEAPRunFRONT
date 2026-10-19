@@ -25,6 +25,10 @@ const loadTransactionsPage = () =>
   import("./features/transactions/pages/transactions.page").then(
     (m) => m.default,
   )
+const loadClientTransactionHistoryPage = () =>
+  import("./features/transactions/pages/client-transaction-history.page").then(
+    (m) => m.default,
+  )
 const loadHoldingsPage = () =>
   import("./features/portfolio/pages/holdings.page").then((m) => m.default)
 const loadAccountDirectoryPage = () =>
@@ -46,6 +50,7 @@ const employeeChildren: Routes = [
     path: "transactions",
     loadComponent: loadTransactionsPage,
   },
+  { path: "clients/:username/transactions", loadComponent: loadClientTransactionHistoryPage },
   { path: "clients", loadComponent: loadAccountDirectoryPage },
   { path: "analytics", loadComponent: loadAnalytics },
   { path: "", redirectTo: "orders", pathMatch: "full" },
@@ -53,6 +58,7 @@ const employeeChildren: Routes = [
 const adminChildren: Routes = [
   { path: "orders", loadComponent: loadOrdersPage },
   { path: "transactions", loadComponent: loadTransactionsPage },
+  { path: "clients/:username/transactions", loadComponent: loadClientTransactionHistoryPage },
   { path: "clients", loadComponent: loadAccountManagementPage },
   { path: "analytics", loadComponent: loadAnalytics },
   { path: "reporters", loadComponent: loadAccountManagementPage, data: { reporters: true } },
