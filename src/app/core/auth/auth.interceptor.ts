@@ -1,37 +1,33 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http'
-import { inject } from '@angular/core'
-import { Router } from '@angular/router'
-import { catchError, throwError } from 'rxjs'
-import { TokenStore } from './token-store.service'
+import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http"
+import { inject } from "@angular/core"
+import { Router } from "@angular/router"
+import { catchError, throwError } from "rxjs"
+import { TokenStore } from "./token-store.service"
+
+const isAuthRequest = (url: string) =>
+  /\/auth\/(login|signup|employee\/login)$/.test(url)
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-    const tokenStore = inject(TokenStore)
-    const router = inject(Router)
-    const token = tokenStore.accessToken()
+  const tokenStore = inject(TokenStore)
+  const router = inject(Router)
+  const authRequest = isAuthRequest(req.url)
+  const token = tokenStore.accessToken()
 
-    const isAuthEndpoint = req.url.includes('/auth/login') || req.url.includes('/auth/signup')
+  const authenticatedRequest = token && !authRequest
+    ? req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    : req
 
-    // have to clone the auth request since HttpRequest obj = immutable
-    let authReq = req 
-    if (token && !isAuthEndpoint) {
-        authReq = req.clone({
-            setHeaders: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-    }
-
-    // send request to handler 
-    return next(authReq).pipe(
-        catchError((error: HttpErrorResponse) => {
-        // if token is expired or revoked
-        if (error.status === 401 && !isAuthEndpoint) {
-            tokenStore.clear()
-            void router.navigate(['/login'])
-        }
-            return throwError(() => error)
-        })
-    )
-
-
+  return next(authenticatedRequest).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && !authRequest) {
+        tokenStore.clear()
+        void router.navigate(["/login"])
+      }
+      return throwError(() => error)
+    }),
+  )
 }

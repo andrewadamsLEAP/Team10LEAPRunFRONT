@@ -23,10 +23,10 @@
 .role-picker button { height: 32px; border: 0; border-radius: 5px; background: transparent; color: #6c7a72; text-transform: capitalize; font-size: 10px; cursor: pointer; }
 .role-picker button.active { background: white; color: var(--green-dark); font-weight: 700; box-shadow: 0 1px 5px #173b2b15; }
 .auth-card label { display: block; margin-bottom: 14px; }
+.auth-name-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .auth-card label span, .form-field > span { display: block; margin-bottom: 7px; color: #59675f; font-size: 10px; font-weight: 600; }
 .auth-card input, .form-field select, .quantity-input { width: 100%; height: 43px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); font-size: 11px; }
 .form-error { margin: 4px 0 12px; padding: 9px 11px; border-radius: 5px; background: #fcebed; color: #a63d45; font-size: 9px; }
 .auth-submit { width: 100%; margin-top: 5px; }
 .auth-switch { margin-top: 18px; color: var(--muted); text-align: center; font-size: 10px; }
 .auth-switch button { border: 0; background: none; color: var(--green-dark); font-weight: 700; cursor: pointer; }
-

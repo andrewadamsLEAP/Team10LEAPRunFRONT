@@ -1,4 +1,5 @@
 import { Component, inject } from "@angular/core"
+import { HttpClient } from "@angular/common/http"
 import {
   Router,
   RouterLink,
@@ -8,7 +9,7 @@ import {
 import Store from "../../../core/state/portfolio.store"
 import Brand from "../../../shared/brand/brand.component"
 import { TokenStore } from "../../../core/auth/token-store.service"
-import { AuthService as GeneratedAuthApi } from "../../../core/api/auth"
+import { BASE_PATH } from "../../../core/api/auth"
 
 @Component({
   selector: "app-shell",
@@ -33,7 +34,8 @@ export default class Shell {
   store = inject(Store)
   router = inject(Router)
   tokenStore = inject(TokenStore)
-  authApi = inject(GeneratedAuthApi)
+  http = inject(HttpClient)
+  apiBasePath = inject(BASE_PATH)
   menu = false
   clientPages = [
     ["home", "Overview"],
@@ -53,7 +55,9 @@ export default class Shell {
     const refreshToken = this.tokenStore.refreshToken()
     if (refreshToken) {
       // Notify NestJS backend to blacklist access and refresh tokens
-      this.authApi.authControllerLogout().subscribe({
+      this.http.post(`${this.apiBasePath}/auth/logout`, {
+        refresh_token: refreshToken,
+      }).subscribe({
         complete: () => this.finalizeLogout(),
         error: () => this.finalizeLogout(), // Clean up locally even if server fails
       })
