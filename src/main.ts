@@ -22,6 +22,6 @@ bootstrapApplication(App, {
     provideHttpClient(
       withInterceptors([authInterceptor])
     ),
-    { provide: BASE_PATH, useValue: 'http://localhost:3000' },
+    { provide: BASE_PATH, useValue: '/api' },
   ],
 }).catch(console.error)

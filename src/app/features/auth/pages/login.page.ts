@@ -1,4 +1,5 @@
 import { Component, inject, signal } from "@angular/core"
+import { HttpClient } from "@angular/common/http"
 // Import ReactiveFormsModule and form building tools
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms"
 import { Router } from "@angular/router"
@@ -10,6 +11,7 @@ import Chart from "../../../shared/charts/price-chart.component"
 
 // the generated auth service
 import { AuthService as GeneratedAuthApi } from "../../../core/api/auth"
+import { BASE_PATH } from "../../../core/api/auth"
 
 @Component({
   selector: "app-auth",
@@ -80,6 +82,8 @@ import { AuthService as GeneratedAuthApi } from "../../../core/api/auth"
 export default class Auth {
   // Dependency injection
   private readonly fb = inject(FormBuilder)
+  private readonly http = inject(HttpClient)
+  private readonly apiBasePath = inject(BASE_PATH)
   private readonly router = inject(Router)
   private readonly authApi = inject(GeneratedAuthApi)
   private readonly tokenStore = inject(TokenStore)
@@ -151,9 +155,11 @@ export default class Auth {
 
   private executeLogin(identifier: string, pass: string, role: Role) {
     // Determine whether to call client login or employee login based on role picker
-    const loginObs = role === 'client'
-      ? this.authApi.authControllerLogin()
-      : this.authApi.authControllerEmployeeLogin()
+    const endpoint = role === 'client' ? '/auth/login' : '/auth/employee/login'
+    const loginObs = this.http.post<any>(`${this.apiBasePath}${endpoint}`, {
+      username: identifier,
+      password: pass,
+    })
 
     loginObs.subscribe({
       next: (res: any) => {
