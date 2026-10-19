@@ -1,65 +1,178 @@
-import { Component, inject } from "@angular/core"
-import { FormsModule } from "@angular/forms"
+import { Component, inject, signal } from "@angular/core"
+// Import ReactiveFormsModule and form building tools
+import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms"
 import { Router } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
+import { TokenStore } from "../../../core/auth/token-store.service"
 import { Role } from "../../../core/models/data"
 import Brand from "../../../shared/brand/brand.component"
 import Chart from "../../../shared/charts/price-chart.component"
 
+// the generated auth service
+import { AuthService as GeneratedAuthApi } from "../../../core/api/auth"
+
 @Component({
   selector: "app-auth",
   standalone: true,
-  imports: [FormsModule, Brand, Chart],
+  imports: [ReactiveFormsModule, Brand, Chart],
   template: `
-    <div class="auth-page">
-      <section class="auth-brand-panel"><app-brand/>
-        <div class="auth-message"><span class="eyebrow">One platform. Every market.</span><h1>Invest with clarity.<br>Move with confidence.</h1><p>Track markets, manage your portfolio, and trade stocks, crypto, and forex from one workspace.</p></div>
-        <div class="auth-market-card"><div><span>Market pulse</span><b>USD markets</b></div><div class="pulse-stats"><span>S&amp;P 500 <em>+0.82%</em></span><span>BTC/USD <em>+2.64%</em></span><span>EUR/USD <em>+0.28%</em></span></div><app-chart/></div>
-      </section>
-      <section class="auth-form-panel"><div class="mobile-brand"><app-brand/></div>
-        <form class="auth-card" (ngSubmit)="submit()">
-          <span class="eyebrow">{{ signup ? 'Create your account' : 'Welcome back' }}</span>
-          <h2>{{ signup ? 'Start investing today' : 'Sign in to Veridian' }}</h2><p>Enter your details to access your workspace.</p>
-          @if (!signup) { <div class="role-picker">@for (r of roles; track r) { <button type="button" [class.active]="role === r" (click)="role = r">{{ r }}</button> }</div> }
-          @if (signup) { <label><span>Full name</span><input name="fullName" [(ngModel)]="fullName" autocomplete="name"></label><label><span>Email address</span><input name="email" type="email" [(ngModel)]="email" required autocomplete="email"></label> }
-          <label><span>Username</span><input name="username" [(ngModel)]="username" required autocomplete="username" placeholder="Enter your username"></label>
-          <label><span>Password</span><input name="password" [(ngModel)]="password" type="password" required minlength="4" [attr.autocomplete]="signup ? 'new-password' : 'current-password'" placeholder="At least 4 characters"></label>
-          @if (error) { <div class="form-error" role="alert">{{ error }}</div> }
-          <button class="primary-button auth-submit">{{ signup ? 'Create account' : 'Sign in' }}</button>
-          <div class="auth-switch">{{ signup ? 'Already have an account? ' : 'New to Veridian? ' }}<button type="button" (click)="signup = !signup; error = ''">{{ signup ? 'Sign in' : 'Create an account' }}</button></div>
-        </form>
-      </section>
-    </div>`,
+    <form class="auth-card" [formGroup]="authForm" (ngSubmit)="submit()">
+      <!-- Toggle mode between login and signup -->
+      <span class="eyebrow">{{ signup() ? 'Create your account' : 'Welcome back' }}</span>
+      <h2>{{ signup() ? 'Start investing today' : 'Sign in to Veridian' }}</h2>
+
+      <!-- Role selector buttons -->
+      @if (!signup()) {
+        <div class="role-picker">
+          @for (r of roles; track r) {
+            <button type="button" [class.active]="selectedRole() === r" (click)="selectedRole.set(r)">
+              {{ r }}
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Signup inputs -->
+      @if (signup()) {
+        <div style="display: flex; gap: 8px;">
+          <label style="flex: 1;">
+            <span>First name</span>
+            <input formControlName="firstName" autocomplete="given-name">
+          </label>
+          <label style="flex: 1;">
+            <span>Last name</span>
+            <input formControlName="lastName" autocomplete="family-name">
+          </label>
+        </div>
+        <label>
+          <span>Email address</span>
+          <input formControlName="email" type="email" autocomplete="email">
+        </label>
+      }
+
+      <label>
+        <span>Username</span>
+        <input formControlName="username" autocomplete="username" placeholder="3–50 characters">
+      </label>
+
+      <label>
+        <span>Password</span>
+        <input formControlName="password" type="password" [placeholder]="signup() ? 'At least 12 characters' : 'Enter your password'">
+      </label>
+
+      @if (error()) {
+        <div class="form-error" role="alert">{{ error() }}</div>
+      }
+
+      <button class="primary-button auth-submit" [disabled]="loading()">
+        {{ loading() ? 'Connecting...' : (signup() ? 'Create account' : 'Sign in') }}
+      </button>
+
+      <div class="auth-switch">
+        {{ signup() ? 'Already have an account? ' : 'New to Veridian? ' }}
+        <button type="button" (click)="toggleMode()">
+          {{ signup() ? 'Sign in' : 'Create an account' }}
+        </button>
+      </div>
+    </form>
+  `
 })
 export default class Auth {
-  store = inject(Store)
-  router = inject(Router)
+  // Dependency injection
+  private readonly fb = inject(FormBuilder)
+  private readonly router = inject(Router)
+  private readonly authApi = inject(GeneratedAuthApi)
+  private readonly tokenStore = inject(TokenStore)
+  private readonly store = inject(Store)
+
   roles: Role[] = ["client", "reporter", "admin"]
-  role: Role = "client"
-  signup = false
-  username = ""
-  password = ""
-  email = ""
-  fullName = ""
-  error = ""
-  submit() {
-    try {
-      if (!this.username.trim() || this.password.length < 4)
-        throw new Error(
-          "Enter a username and a password of at least 4 characters.",
-        )
-      if (
-        this.signup &&
-        this.store
-          .clients()
-          .some((a) => a.username === this.username.trim().toLowerCase())
-      )
-        throw new Error("Username already exists.")
-      const role = this.signup ? "client" : this.role
-      this.store.login(role, this.username, this.email, this.fullName.trim())
-      void this.router.navigate([role, role === "client" ? "home" : "orders"])
-    } catch (error) {
-      this.error = (error as Error).message
+  selectedRole = signal<Role>("client")
+  signup = signal(false)
+  loading = signal(false)
+  error = signal("")
+
+  // Define the reactive form structure with initial validation rules
+  authForm = this.fb.group({
+    username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
+    password: ['', [Validators.required, Validators.minLength(4)]],
+    email: ['', [Validators.email]],
+    firstName: [''],
+    lastName: [''],
+  })
+
+  // Dynamically swap password & email rules when toggling between sign-in and sign-up
+  toggleMode() {
+    this.signup.update((v: boolean) => !v)
+    this.error.set("")
+    const passCtrl = this.authForm.get('password')
+    const emailCtrl = this.authForm.get('email')
+
+    if (this.signup()) {
+      // NestJS auth controller strictly requires >= 12 chars for sign-up!
+      passCtrl?.setValidators([Validators.required, Validators.minLength(12)])
+      emailCtrl?.setValidators([Validators.required, Validators.email])
+    } else {
+      passCtrl?.setValidators([Validators.required, Validators.minLength(4)])
+      emailCtrl?.clearValidators()
     }
+    passCtrl?.updateValueAndValidity()
+    emailCtrl?.updateValueAndValidity()
+  }
+
+  submit() {
+    if (this.authForm.invalid) {
+      this.error.set("Please provide valid form inputs.")
+      return
+    }
+
+    const { username, password, email, firstName, lastName } = this.authForm.getRawValue()
+    this.loading.set(true)
+    this.error.set("")
+
+    if (this.signup()) {
+      // Call the generated NestJS signup API that returns RxJS Observable
+      // observable is basically a better promise for FE since it's a stream of events
+      // and can factor in user edge cases like exiting off mid sign in or smthn
+      this.authApi.authControllerSignup().subscribe({
+        next: () => {
+          //login if its chill
+          this.executeLogin(username!, password!, 'client')
+        },
+        error: (err: any) => {
+          this.loading.set(false)
+          // display err msg
+          this.error.set(err.error?.message || "Registration failed. Username or email may already be taken.")
+        }
+      })
+    } else {
+      this.executeLogin(username!, password!, this.selectedRole())
+    }
+  }
+
+  private executeLogin(identifier: string, pass: string, role: Role) {
+    // Determine whether to call client login or employee login based on role picker
+    const loginObs = role === 'client'
+      ? this.authApi.authControllerLogin()
+      : this.authApi.authControllerEmployeeLogin()
+
+    loginObs.subscribe({
+      next: (res: any) => {
+        this.loading.set(false)
+        
+        // Saving jwt tokens in token store
+        this.tokenStore.setTokens(res.access_token, res.refresh_token)
+
+        // Sync session in portfolio.store.ts
+        const resolvedRole = this.tokenStore.userRole()
+        this.store.session.set({ role: resolvedRole, username: identifier })
+
+        // Navigate to user's dashboard
+        void this.router.navigate([resolvedRole, resolvedRole === 'client' ? 'home' : 'orders'])
+      },
+      error: (err: any) => {
+        this.loading.set(false)
+        this.error.set(err.error?.message || "Invalid credentials or account is already active in another session.")
+      }
+    })
   }
 }

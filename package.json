@@ -6,6 +6,7 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build",
+    "generate:api:auth": "openapi-generator-cli generate -i http://localhost:3000/v3/api-docs/swagger.json -g typescript-angular -o src/app/core/api/auth --additional-properties=ngVersion=21.0.0,providedInRoot=true,fileNaming=kebab-case",
     "typecheck": "ngc --noEmit -p tsconfig.app.json",
     "test": "node tests/accounts.test.mjs"
   },
@@ -23,6 +24,7 @@
     "@angular/build": "^21.2.0",
     "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^21.2.0",
+    "@openapitools/openapi-generator-cli": "^2.41.0",
     "typescript": "~5.9.3"
   }
 }
