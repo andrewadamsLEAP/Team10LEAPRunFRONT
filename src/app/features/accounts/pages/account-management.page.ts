@@ -1,18 +1,18 @@
 import { Component, inject } from "@angular/core"
 import { CurrencyPipe } from "@angular/common"
 import { FormsModule } from "@angular/forms"
-import { ActivatedRoute } from "@angular/router"
+import { ActivatedRoute, RouterLink } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
 import { Account } from "../../../core/models/data"
 
 @Component({
   selector: "app-account-management-page",
   standalone: true,
-  imports: [CurrencyPipe, FormsModule],
+  imports: [CurrencyPipe, FormsModule, RouterLink],
   template: `
     <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">Account management</span><h1>{{ reporters ? 'Reporter accounts' : 'Client accounts' }}</h1><p>Create, edit, and manage account access.</p></div><button class="primary-button" (click)="create()">Add account</button></div>
-      <section class="surface data-surface"><div class="data-table accounts-table admin"><div class="data-row data-head"><span>Username</span><span>Full name</span><span>Email</span><span>Cash</span><span>Status</span><span>Actions</span></div>
-        @for (a of accounts; track a.id) { <div class="data-row"><strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span><span>{{ a.email || '—' }}</span><span>{{ a.cash | currency:'USD' }}</span><span [class]="'status ' + a.status.toLowerCase()">{{ a.status }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button (click)="toggle(a)">{{ a.status === 'Active' ? 'Suspend' : 'Activate' }}</button><button class="danger" (click)="remove(a)">Delete</button></div></div> } @empty { <p class="empty-state">No accounts yet.</p> }
+      <section class="surface data-surface"><div class="data-table accounts-table admin"><div class="data-row data-head"><span>Username</span><span>Full name</span><span>Email</span><span>Cash</span><span>Actions</span></div>
+        @for (a of accounts; track a.id) { <div class="data-row">@if (isReporterAccount(a)) { <strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span> } @else { <a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']"><strong>{{ a.username }}</strong></a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.fullName || a.username }}</a> }<span>{{ a.email || '—' }}</span><span>{{ a.cash | currency:'USD' }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button class="danger" (click)="remove(a)">Delete</button></div></div> } @empty { <p class="empty-state">No accounts yet.</p> }
       </div></section>
     </div>
     @if (draft; as d) {
@@ -37,6 +37,9 @@ export default class AccountManagementPage {
   get accounts() {
     return this.store[this.key]()
   }
+  isReporterAccount(account: Account) {
+    return this.store.reporters().some((reporter) => reporter.username === account.username)
+  }
   draft: Account | null = null
   deleting: Account | null = null
   editing = false
@@ -50,19 +53,13 @@ export default class AccountManagementPage {
       fullName: "",
       email: "",
       cash: 0,
-      status: "Active",
+     // status: "Active",
     }
   }
   edit(a: Account) {
     this.editing = true
     this.error = ""
     this.draft = { ...a }
-  }
-  toggle(a: Account) {
-    this.store.saveAccount(this.key, {
-      ...a,
-      status: a.status === "Active" ? "Suspended" : "Active",
-    })
   }
   remove(a: Account) {
     this.deleting = a

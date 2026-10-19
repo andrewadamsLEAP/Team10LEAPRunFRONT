@@ -89,12 +89,14 @@ export default class Store {
   login(role: Role, rawUsername: string, email = "", fullName = "") {
     const username = rawUsername.trim().toLowerCase()
     const list = role === "client" ? this.clients() : this.reporters()
+    /*
     if (
       role !== "admin" &&
       list.some((a) => a.username === username && a.status === "Suspended")
     ) {
       throw new Error("This account is suspended. Contact your administrator.")
     }
+      */
     if (
       role === "client" &&
       !this.clients().some((a) => a.username === username)

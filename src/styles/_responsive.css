@@ -62,7 +62,8 @@
 app-root, app-shell, app-auth, app-orders-page, app-transactions-page,
 app-holdings-page, app-market-list-page, app-ticker-detail-page, app-trade-page,
 app-dashboard-page, app-client-analytics-page, app-analytics,
-app-account-directory-page, app-account-management-page { display: block; }
+app-account-directory-page, app-account-management-page,
+app-client-transaction-history-page { display: block; }
 a { color: inherit; text-decoration: none; }
 .empty-state { padding: 28px; color: var(--muted); font-size: 12px; }
 .client-nav a { display: flex; align-items: center; padding: 12px; font-size: 11px; }

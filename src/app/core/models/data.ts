@@ -42,7 +42,7 @@ export type Account = {
   email: string
   fullName: string
   cash: number
-  status: "Active" | "Suspended"
+  //status: "Active" | "Suspended"
 }
 
 export const assets: Asset[] = [
@@ -253,7 +253,7 @@ export const initialClients: Account[] = [
     email: "jordan@example.com",
     fullName: "Jordan Lee",
     cash: 18420.12,
-    status: "Active",
+   // status: "Active",
   },
   {
     id: 2,
@@ -261,7 +261,7 @@ export const initialClients: Account[] = [
     email: "alex@example.com",
     fullName: "Alex Morgan",
     cash: 12304.7,
-    status: "Active",
+   // status: "Active",
   },
   {
     id: 3,
@@ -269,7 +269,7 @@ export const initialClients: Account[] = [
     email: "samira@example.com",
     fullName: "Samira Cole",
     cash: 8821.42,
-    status: "Active",
+   // status: "Active",
   },
   {
     id: 4,
@@ -277,7 +277,7 @@ export const initialClients: Account[] = [
     email: "drew@example.com",
     fullName: "Drew Parker",
     cash: 4280,
-    status: "Suspended",
+    //status: "Suspended",
   },
 ]
 
@@ -288,7 +288,7 @@ export const initialReporters: Account[] = [
     email: "rpatel@veridian.com",
     fullName: "Rina Patel",
     cash: 0,
-    status: "Active",
+   // status: "Active",
   },
   {
     id: 12,
@@ -296,7 +296,7 @@ export const initialReporters: Account[] = [
     email: "mchen@veridian.com",
     fullName: "Miles Chen",
     cash: 0,
-    status: "Active",
+   // status: "Active",
   },
   {
     id: 13,
@@ -304,6 +304,6 @@ export const initialReporters: Account[] = [
     email: "krobin@veridian.com",
     fullName: "Kai Robinson",
     cash: 0,
-    status: "Suspended",
+    //status: "Suspended",
   },
 ]
