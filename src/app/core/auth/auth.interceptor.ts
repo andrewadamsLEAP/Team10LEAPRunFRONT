@@ -1,0 +1,33 @@
+import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http"
+import { inject } from "@angular/core"
+import { Router } from "@angular/router"
+import { catchError, throwError } from "rxjs"
+import { TokenStore } from "./token-store.service"
+
+const isAuthRequest = (url: string) =>
+  /\/auth\/(login|signup|employee\/login)$/.test(url)
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const tokenStore = inject(TokenStore)
+  const router = inject(Router)
+  const authRequest = isAuthRequest(req.url)
+  const token = tokenStore.accessToken()
+
+  const authenticatedRequest = token && !authRequest
+    ? req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    : req
+
+  return next(authenticatedRequest).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && !authRequest) {
+        tokenStore.clear()
+        void router.navigate(["/login"])
+      }
+      return throwError(() => error)
+    }),
+  )
+}

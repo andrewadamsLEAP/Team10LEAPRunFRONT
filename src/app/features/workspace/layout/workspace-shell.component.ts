@@ -1,4 +1,5 @@
 import { Component, inject } from "@angular/core"
+import { HttpClient } from "@angular/common/http"
 import {
   Router,
   RouterLink,
@@ -7,6 +8,8 @@ import {
 } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
 import Brand from "../../../shared/brand/brand.component"
+import { TokenStore } from "../../../core/auth/token-store.service"
+import { BASE_PATH } from "../../../core/api/auth"
 
 @Component({
   selector: "app-shell",
@@ -30,6 +33,9 @@ import Brand from "../../../shared/brand/brand.component"
 export default class Shell {
   store = inject(Store)
   router = inject(Router)
+  tokenStore = inject(TokenStore)
+  http = inject(HttpClient)
+  apiBasePath = inject(BASE_PATH)
   menu = false
   clientPages = [
     ["home", "Overview"],
@@ -46,6 +52,22 @@ export default class Shell {
     ["analytics", "Analytics"],
   ]
   logout() {
+    const refreshToken = this.tokenStore.refreshToken()
+    if (refreshToken) {
+      // Notify NestJS backend to blacklist access and refresh tokens
+      this.http.post(`${this.apiBasePath}/auth/logout`, {
+        refresh_token: refreshToken,
+      }).subscribe({
+        complete: () => this.finalizeLogout(),
+        error: () => this.finalizeLogout(), // Clean up locally even if server fails
+      })
+    } else {
+      this.finalizeLogout()
+    }
+  }
+
+  private finalizeLogout() {
+    this.tokenStore.clear()
     this.store.session.set(null)
     void this.router.navigate(["/login"])
   }

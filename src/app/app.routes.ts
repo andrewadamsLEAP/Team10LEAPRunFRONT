@@ -66,6 +66,7 @@ const adminChildren: Routes = [
 ]
 export const routes: Routes = [
   { path: "login", loadComponent: loadAuth },
+  { path: "signup", loadComponent: loadAuth },
   {
     path: "client",
     loadComponent: loadShell,
