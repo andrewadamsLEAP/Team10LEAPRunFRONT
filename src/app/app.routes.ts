@@ -1,5 +1,5 @@
 import { Routes } from "@angular/router"
-import { roleGuard } from "./core/auth/role.guard"
+import { authPageGuard, roleGuard } from "./core/auth/role.guard"
 
 const loadAuth = () =>
   import("./features/auth/pages/login.page").then((m) => m.default)
@@ -65,8 +65,8 @@ const adminChildren: Routes = [
   { path: "", redirectTo: "orders", pathMatch: "full" },
 ]
 export const routes: Routes = [
-  { path: "login", loadComponent: loadAuth },
-  { path: "signup", loadComponent: loadAuth },
+  { path: "login", loadComponent: loadAuth, canActivate: [authPageGuard] },
+  { path: "signup", loadComponent: loadAuth, canActivate: [authPageGuard] },
   {
     path: "client",
     loadComponent: loadShell,
