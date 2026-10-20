@@ -1,5 +1,14 @@
 module.exports = [
   {
+    context: ["/analytics-api"],
+    target: "http://localhost:5000",
+    secure: false,
+    changeOrigin: true,
+    pathRewrite: {
+      "^/analytics-api": "",
+    },
+  },
+  {
     context: ["/api/v1"],
     target: "http://localhost:8085",
     secure: false,
