@@ -42,6 +42,7 @@ export type Account = {
   email: string
   fullName: string
   cash: number
+  role?: string
   //status: "Active" | "Suspended"
 }
 
