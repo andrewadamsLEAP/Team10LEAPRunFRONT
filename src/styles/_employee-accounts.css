@@ -20,7 +20,7 @@
 .employee-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px #159a6e1b; }
 .accounts-table .data-row { grid-template-columns: 1fr 1.5fr 1.5fr; }
 .accounts-table.admin .data-row { grid-template-columns: .9fr 1.3fr 1fr .9fr 1.5fr; }
-.accounts-table.admin.reporter-accounts .data-row { grid-template-columns: 1fr 1.5fr 1.2fr .8fr 1.5fr; }
+.accounts-table.admin.reporter-accounts .data-row { grid-template-columns: 1fr 1.5fr 1.2fr .8fr; }
 .account-client-link { color: var(--green-dark); }
 .account-client-link:hover { text-decoration: underline; }
 .row-actions { display: flex; align-items: center; gap: 3px; }
