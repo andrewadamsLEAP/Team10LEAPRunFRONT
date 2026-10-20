@@ -1,0 +1,111 @@
+@if (!authenticated()) {
+  <main class="auth-page">
+    <section class="auth-brand-panel">
+      <div class="brand">
+        <span class="brand-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        <strong>VERIDIAN</strong>
+      </div>
+      <div class="auth-message">
+        <span class="eyebrow">One platform. Every market.</span>
+        <h1>Invest with clarity.<br />Move with confidence.</h1>
+        <p>Track markets, manage your portfolio, and trade stocks, crypto, and forex from one secure workspace.</p>
+      </div>
+      <div class="auth-market-card">
+        <div><span>Market pulse</span><b>Live</b></div>
+        <div class="price-chart" aria-label="Market trend chart">
+          <svg viewBox="0 0 460 80" role="img" aria-hidden="true" preserveAspectRatio="none">
+            <path d="M0 64 C32 58 44 63 72 51 S112 60 140 40 S183 43 207 30 S245 38 274 21 S314 31 340 17 S387 24 414 8 S444 13 460 5" fill="none" stroke="#65d6ad" stroke-width="2" vector-effect="non-scaling-stroke" />
+          </svg>
+        </div>
+      </div>
+      <small>Market data will appear when the market service is connected.</small>
+    </section>
+
+    <section class="auth-form-panel">
+      <div class="mobile-brand">
+        <div class="brand"><span class="brand-bars" aria-hidden="true"><i></i><i></i><i></i></span><strong>VERIDIAN</strong></div>
+      </div>
+      <form class="auth-card" (ngSubmit)="submit()">
+        <span class="eyebrow">{{ mode() === 'login' ? 'Welcome back' : 'Create your account' }}</span>
+        <h2>{{ mode() === 'login' ? 'Sign in to Veridian' : 'Start investing today' }}</h2>
+        <p>{{ mode() === 'login' ? 'Enter your details to access your workspace.' : 'Create a client account in just a few steps.' }}</p>
+
+        @if (mode() === 'login') {
+          <div class="role-picker" aria-label="Demo role">
+            @for (role of ['client', 'reporter', 'admin']; track role) {
+              <button type="button" [class.active]="selectedRole() === role" (click)="selectedRole.set($any(role))">{{ role }}</button>
+            }
+          </div>
+        }
+
+        <label>
+          <span>Username</span>
+          <input [(ngModel)]="username" name="username" placeholder="Enter your username" autocomplete="username" />
+        </label>
+        @if (mode() === 'signup') {
+          <label>
+            <span>Email address</span>
+            <input [(ngModel)]="email" name="email" placeholder="you@example.com" type="email" />
+          </label>
+        }
+        <label>
+          <span>Password</span>
+          <input [(ngModel)]="password" name="password" placeholder="At least 4 characters" type="password" autocomplete="current-password" />
+        </label>
+        @if (error) { <div class="form-error" role="alert">{{ error }}</div> }
+        <button class="primary-button auth-submit" type="submit">{{ mode() === 'login' ? 'Sign in' : 'Create account' }} <span aria-hidden="true">→</span></button>
+        <div class="auth-switch">
+          {{ mode() === 'login' ? 'New to Veridian?' : 'Already have an account?' }}
+          <button type="button" (click)="toggleMode()">{{ mode() === 'login' ? 'Create an account' : 'Sign in' }}</button>
+        </div>
+        @if (mode() === 'login') { <div class="demo-note">Demo: choose any role, then use any username and a 4+ character password.</div> }
+      </form>
+    </section>
+  </main>
+} @else {
+  <div class="client-app">
+    <header class="client-header">
+      <button class="menu-button" type="button" aria-label="Open navigation">☰</button>
+      <button class="brand-button" type="button" aria-label="Go to home">
+        <span class="brand"><span class="brand-bars" aria-hidden="true"><i></i><i></i><i></i></span><strong>VERIDIAN</strong></span>
+      </button>
+      <nav class="client-nav" aria-label="Primary navigation">
+        <button class="active" type="button">⌂ Home</button>
+        <button type="button">▣ Orders</button>
+        <button type="button">↔ Transactions</button>
+        <button type="button">◈ Holdings</button>
+      </nav>
+      <div class="header-search"><span aria-hidden="true">⌕</span><input placeholder="Search ticker or company" aria-label="Search ticker or company" /></div>
+      <div class="client-account"><div class="user-avatar">{{ username.slice(0, 2).toUpperCase() }}</div><span>{{ username }}</span><button type="button" (click)="logout()" aria-label="Sign out">↪</button></div>
+    </header>
+
+    <main class="page-wrap">
+      <div class="page-intro">
+        <div><span class="eyebrow">Client dashboard</span><h1>Good morning, {{ username }}</h1><p>Here is what is happening with your portfolio today.</p></div>
+        <button class="secondary-button" type="button">Download statement</button>
+      </div>
+      <section class="portfolio-hero">
+        <div class="portfolio-copy"><span>Total portfolio value</span><h2>$24,680.00</h2><div class="gain">↗ Portfolio performance is ready to track</div><div class="period-tabs"><button type="button">1D</button><button type="button">1W</button><button class="active" type="button">1M</button><button type="button">1Y</button></div></div>
+        <div class="price-chart" [attr.aria-label]="selectedTicker ? selectedTicker + ' price history chart' : 'Market price history chart'"><svg viewBox="0 0 520 190" role="img" aria-hidden="true" preserveAspectRatio="none"><path class="grid-line" d="M0 30H520M0 80H520M0 130H520M0 180H520" /><path [attr.d]="historyPath()" fill="none" stroke="#65dbb0" stroke-width="3" vector-effect="non-scaling-stroke" /></svg></div>
+        <div class="portfolio-stats"><div><span>Buying power</span><strong>$12,420.00</strong></div><div><span>Invested</span><strong>$12,260.00</strong></div><div><span>Total return</span><strong class="positive">+$680.00</strong></div></div>
+      </section>
+
+      <div class="content-grid">
+        <section class="surface trending-section">
+          <div class="section-title"><div><span class="eyebrow">Live markets</span><h2>Trending tickers</h2></div><span class="market-updated">{{ selectedTicker || 'Live' }} · {{ marketDataUpdatedAt || 'connecting' }}</span></div>
+          <div class="ticker-table">
+            <div class="ticker-row ticker-head"><span>Asset</span><span>Market</span><span>Price</span><span>Today</span><span>Volume</span><span></span></div>
+            @for (quote of marketQuotes; track quoteSymbol(quote)) {
+              <button class="ticker-row" type="button" (click)="loadPriceHistory(quoteSymbol(quote))"><span class="ticker-name"><i>{{ quoteSymbol(quote).charAt(0) }}</i><b>{{ quoteSymbol(quote) }}<small>Live market quote</small></b></span><span>Market</span><strong>{{ formatPrice(quotePrice(quote)) }}</strong><span [class.positive]="quoteChange(quote) >= 0" [class.negative]="quoteChange(quote) < 0">{{ quoteChange(quote) | number:'1.2-2' }}%</span><span>{{ quote.volume ?? '—' }}</span><span aria-hidden="true">›</span></button>
+            }
+            @if (!marketQuotes.length) { <div class="market-empty">Waiting for market data...</div> }
+          </div>
+        </section>
+        <aside class="home-sidebar">
+          <section class="surface"><div class="section-title small"><div><span class="eyebrow">Portfolio</span><h2>Top holdings</h2></div><button type="button">View all</button></div><div class="mini-list-row"><i>N</i><span><b>NVDA</b><small>12 shares</small></span><em>+$182.40</em></div><div class="mini-list-row"><i>A</i><span><b>AAPL</b><small>8 shares</small></span><em>+$94.20</em></div></section>
+          <section class="surface"><div class="section-title small"><div><span class="eyebrow">Activity</span><h2>Recent orders</h2></div></div><div class="order-mini"><span><b>Buy NVDA</b><small>12 shares · Today</small></span><em class="status filled">Filled</em></div><div class="order-mini"><span><b>Sell TSLA</b><small>4 shares · Yesterday</small></span><em class="status pending">Pending</em></div></section>
+        </aside>
+      </div>
+    </main>
+  </div>
+}
