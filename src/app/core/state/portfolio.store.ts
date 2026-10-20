@@ -1,4 +1,6 @@
-import { Injectable, signal } from "@angular/core"
+import { HttpClient } from "@angular/common/http"
+import { Injectable, inject, signal } from "@angular/core"
+import { catchError, of } from "rxjs"
 import {
   Account,
   Role,
@@ -16,6 +18,11 @@ export type Position = {
   quantity: number
   average: number
 }
+type Holding = {
+  clientId: number
+  ticker: string
+  quantity: number
+}
 type Session = {
   role: Role
   username: string
@@ -32,6 +39,7 @@ export const timestamp = () =>
 
 @Injectable({ providedIn: "root" })
 export default class Store {
+  private readonly http = inject(HttpClient)
   readonly assets = assets
   session = signal<Session | null>(null)
   clients = signal(structuredClone(initialClients))
@@ -85,6 +93,24 @@ export default class Store {
         p.quantity * this.assets.find((a) => a.symbol === p.symbol)!.price,
       0,
     )
+  }
+  loadHoldings() {
+    this.http
+      .get<Holding[]>("http://localhost:8080/api/v1/holdings")
+      .pipe(catchError(() => of([])))
+      .subscribe((holdings) => {
+        const client = this.session()?.username ?? ""
+        this.positions.set(
+          holdings.map((holding) => ({
+            client,
+            symbol: holding.ticker,
+            quantity: holding.quantity,
+            average:
+              this.assets.find((asset) => asset.symbol === holding.ticker)
+                ?.price ?? 0,
+          })),
+        )
+      })
   }
   login(role: Role, rawUsername: string, email = "", fullName = "") {
     const username = rawUsername.trim().toLowerCase()
