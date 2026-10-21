@@ -36,8 +36,8 @@ type TransactionRow = {
           @if (message) { <p class="empty-state" role="status">{{ message }}</p> }
         }
         <div class="data-table transaction-table" [class.employee-transactions]="!client"><div class="data-row data-head"><span>Transaction ID</span>@if (!client) { <span>Client</span> }<span>Type</span><span>Amount</span>@if (client) { <span>Status</span> }<span>Date &amp; time</span></div>
-          @if (admin && loading()) { <p class="empty-state" role="status">Loading transactions…</p> }
-          @else if (admin && loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
+          @if (employee && loading()) { <p class="empty-state" role="status">Loading transactions…</p> }
+          @else if (employee && loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
           @else { @for (t of transactions; track t.id) { <div class="data-row"><strong>{{ t.id }}</strong>@if (!client) { <span>{{ t.client }}</span> }<span>{{ t.type }}</span><strong [class]="t.amount >= 0 ? 'positive' : 'negative'">{{ t.amount | currency:'USD' }}</strong>@if (client) { <span [class]="'status ' + (t.status || '').toLowerCase()">{{ t.status }}</span> }<span>{{ admin ? formatTimestamp(t.date) : t.date }}</span></div> } @empty { <p class="empty-state">No transactions yet.</p> } }
         </div>
       </section>
@@ -52,12 +52,12 @@ export default class TransactionsPage implements OnInit {
   loadError = signal("")
 
   ngOnInit() {
-    if (!this.admin) return
+    if (!this.employee) return
 
     this.loading.set(true)
     this.http
       .get<AdminTransactionRecord[]>(
-        `${this.apiBasePath}/v1/trading/admin/transactions`,
+        `${this.apiBasePath}/v1/trading/employee/transactions`,
         { timeout: 15000 },
       )
       .subscribe({
@@ -88,8 +88,12 @@ export default class TransactionsPage implements OnInit {
   get admin() {
     return this.store.session()?.role === "admin"
   }
+  get employee() {
+    const role = this.store.session()?.role
+    return role === "admin" || role === "reporter"
+  }
   get transactions() {
-    if (this.admin) return this.adminTransactions()
+    if (this.employee) return this.adminTransactions()
     return this.client ? this.store.clientTransactions : this.store.transactions()
   }
 
