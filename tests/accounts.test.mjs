@@ -19,12 +19,31 @@ const backendHoldings = [
   { clientId: 47, ticker: "AAPL", quantity: 36 },
   { clientId: 47, ticker: "MSFT", quantity: 12 },
 ]
+const backendInstruments = [
+  {
+    ticker: "AAPL",
+    asset_type: "STOCK",
+    displayName: "Apple Inc.",
+    previousClose: 249,
+    open: 249.5,
+    volume: 100,
+    averageVolume: 100,
+    bidPrice: 250.1,
+    askPrice: 250.25,
+    bidSize: 100,
+    askSize: 100,
+    quoteTimestamp: "2026-10-22T14:30:00Z",
+    recordedAt: "2026-10-22T14:30:02Z",
+    changePercent: 0.5,
+  },
+]
 
 class FakeHttpClient {
   requests = []
 
   get(url) {
     this.requests.push({ method: "GET", url })
+    if (url === "/api/v1/trading/market-data/prices") return of(backendMarketPrices)
     if (url === "/api/v1/holdings") return of(backendHoldings)
     if (url.includes("/api/v1/holdings/quantity")) return of({ quantity: 36 })
     if (url.includes("/api/v1/holdings/AAPL")) return of(backendHoldings[0])
@@ -41,6 +60,16 @@ class FakeHttpClient {
       amount,
       timestamp: "2026-10-22T15:00:00Z",
     })
+  }
+}
+
+class FakeMarketDataService {
+  getInstruments() {
+    return of(backendInstruments)
+  }
+
+  getInstrument() {
+    return of(null)
   }
 }
 
@@ -78,7 +107,7 @@ try {
     pathToFileURL(join(temporary, "store.mjs"))
   )
   const http = new FakeHttpClient()
-  const store = new Store(http)
+  const store = new Store(http, new FakeMarketDataService())
   store.login("client", "newclient")
   assert.equal(store.cash, 0)
   assert.equal(store.name, "newclient")
@@ -130,6 +159,8 @@ try {
   )
   assert.equal((await store.getHolding("AAPL").toPromise()).quantity, 36)
   assert.equal((await store.getHoldingQuantity("AAPL").toPromise()).quantity, 36)
+  store.loadInstruments()
+  assert.equal(store.instruments()[0].askPrice, 250.25)
   store.login("reporter", "rpatel")
   assert.equal(store.name, "Rina Patel")
   assert.throws(

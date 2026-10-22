@@ -28,6 +28,8 @@
 .section-title.small { height: 58px; }
 .ticker-table { overflow-x: auto; }
 .ticker-row { min-width: 760px; width: 100%; min-height: 62px; padding: 0 16px; border: 0; border-bottom: 1px solid #edf2ef; background: white; display: grid; grid-template-columns: 2fr .8fr 1fr .8fr .9fr 1fr 20px; gap: 10px; align-items: center; color: #59665f; text-align: left; font-size: 9px; }
+.price-flash { animation: price-flash 900ms ease-out; border-radius: 3px; padding: 2px 4px; }
+@keyframes price-flash { 0% { background: #e5e7eb; } 100% { background: transparent; } }
 button.ticker-row { cursor: pointer; }
 button.ticker-row:hover { background: #f7faf8; }
 .ticker-row.ticker-head { min-height: 29px; color: #929d97; text-transform: uppercase; letter-spacing: .07em; font-size: 7px; }

@@ -20,6 +20,13 @@ type BackendInstrument = {
   recordedAt: string | null
   changePercent: number | null
 }
+export type MarketPriceHistory = {
+  ticker: string
+  ask_price: number | null
+  bid_price: number | null
+  quote_timestamp: string | null
+  recorded_at: string
+}
 
 @Injectable({ providedIn: "root" })
 export class MarketDataService {
@@ -45,6 +52,20 @@ export class MarketDataService {
       switchMap((tickers) =>
         forkJoin(tickers.map((ticker) => this.getInstrument(ticker))),
       ),
+    )
+  }
+
+  getPriceHistory(ticker: string, from?: string, to?: string): Observable<MarketPriceHistory[]> {
+    let url = `${this.apiBasePath}/v1/trading/market-data/prices/${encodeURIComponent(ticker)}/history`
+    if (from && to) {
+      url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+    }
+    return this.http.get<MarketPriceHistory[]>(url)
+  }
+
+  getLatestPrice(ticker: string): Observable<MarketPriceHistory[]> {
+    return this.http.get<MarketPriceHistory[]>(
+      `${this.apiBasePath}/v1/trading/market-data/prices/${encodeURIComponent(ticker)}`,
     )
   }
 
