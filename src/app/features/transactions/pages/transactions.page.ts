@@ -52,6 +52,10 @@ export default class TransactionsPage implements OnInit {
   loadError = signal("")
 
   ngOnInit() {
+    if (this.client) {
+      this.store.loadClientTransactions()
+      return
+    }
     if (!this.admin) return
 
     this.loading.set(true)
@@ -101,9 +105,19 @@ export default class TransactionsPage implements OnInit {
   message = ""
   funds() {
     try {
-      this.store.funds(this.fundType, this.amount)
-      this.message = `${this.fundType} completed successfully.`
-      this.amount = 0
+      this.store.funds(this.fundType, this.amount).subscribe({
+        next: () => {
+          this.message = `${this.fundType} completed successfully.`
+          this.amount = 0
+        },
+        error: (error: { error?: { detail?: string; message?: string }; message?: string }) => {
+          this.message =
+            error.error?.detail ||
+            error.error?.message ||
+            error.message ||
+            `${this.fundType} failed.`
+        },
+      })
     } catch (error) {
       this.message = (error as Error).message
     }
