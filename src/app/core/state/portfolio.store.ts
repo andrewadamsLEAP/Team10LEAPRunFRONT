@@ -30,6 +30,14 @@ type BackendTransaction = {
   amount: number
   timestamp: string
 }
+export type Holding = {
+  clientId: number
+  ticker: string
+  quantity: number
+}
+export type QuantityResponse = {
+  quantity: number
+}
 export const timestamp = () =>
   new Intl.DateTimeFormat("en-US", {
     month: "long",
@@ -104,6 +112,20 @@ export default class Store {
       0,
     )
   }
+  loadHoldings() {
+    this.http.get<Holding[]>("/api/v1/holdings").subscribe((records) => {
+      const client = this.session()?.username ?? ""
+      this.positions.set(records.map((record) => this.toPosition(record, client)))
+    })
+  }
+  getHolding(ticker: string) {
+    return this.http.get<Holding>(`/api/v1/holdings/${encodeURIComponent(ticker)}`)
+  }
+  getHoldingQuantity(ticker: string) {
+    return this.http.get<QuantityResponse>(
+      `/api/v1/holdings/quantity?ticker=${encodeURIComponent(ticker)}`,
+    )
+  }
   loadClientTransactions() {
     this.http
       .get<BackendTransaction[]>("/api/v1/trading/transactions")
@@ -151,6 +173,14 @@ export default class Store {
           : record.amount,
       date: record.timestamp,
       status: "Complete" as const,
+    }
+  }
+  private toPosition(record: Holding, client: string): Position {
+    return {
+      client,
+      symbol: record.ticker,
+      quantity: record.quantity,
+      average: this.assets.find((asset) => asset.symbol === record.ticker)?.price ?? 0,
     }
   }
   login(role: Role, rawUsername: string, email = "", fullName = "") {

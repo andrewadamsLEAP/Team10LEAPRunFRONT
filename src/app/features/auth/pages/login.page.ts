@@ -173,6 +173,7 @@ export default class Auth {
         const resolvedRole = this.tokenStore.userRole()
         this.store.session.set({ role: resolvedRole, username: identifier })
         if (resolvedRole === "client") {
+          this.store.loadHoldings()
           this.store.loadClientTransactions()
         }
 
