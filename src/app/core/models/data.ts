@@ -16,6 +16,23 @@ export type Asset = {
   low: number
 }
 
+export type Instrument = {
+  ticker: string
+  displayName: string | null
+  assetType: "STOCK" | "CRYPTO" | "FOREX"
+  previousClose: number
+  open: number
+  volume: number
+  averageVolume: number
+  bidPrice: number | null
+  askPrice: number | null
+  bidSize: number | null
+  askSize: number | null
+  quoteTimestamp: string | null
+  recordedAt: string | null
+  changePercent: number | null
+}
+
 export type Order = {
   id: string
   client: string

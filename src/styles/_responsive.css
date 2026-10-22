@@ -22,6 +22,10 @@
   .header-search { width: auto; flex: 1; margin-left: 0; }
   .client-account > span { display: none; }
   .page-wrap { padding-inline: 14px; }
+  .profile-heading, .profile-form { padding-inline: 18px; }
+  .profile-readonly { padding-inline: 18px; grid-template-columns: 1fr; }
+  .profile-fields { grid-template-columns: 1fr; gap: 15px; }
+  .profile-fields label:first-child { grid-column: auto; }
   .portfolio-hero { grid-template-columns: 1fr; gap: 8px; }
   .portfolio-hero .price-chart { height: 120px; }
   .portfolio-copy .period-tabs { margin-top: 15px; }
@@ -55,6 +59,7 @@
   .chart-surface .price-chart { height: 230px; }
   .funds-panel { flex-direction: column; align-items: stretch; }
   .fund-input { width: 100%; }
+  .ticker-page-search { width: 100%; }
   .stats-grid { grid-template-columns: 1fr; }
   .employee-main > header { padding-inline: 14px; }
 }
@@ -63,7 +68,7 @@ app-root, app-shell, app-auth, app-orders-page, app-transactions-page,
 app-holdings-page, app-market-list-page, app-ticker-detail-page, app-trade-page,
 app-dashboard-page, app-client-analytics-page, app-analytics,
 app-account-directory-page, app-account-management-page,
-app-client-transaction-history-page { display: block; }
+app-client-transaction-history-page, app-profile-page { display: block; }
 a { color: inherit; text-decoration: none; }
 .empty-state { padding: 28px; color: var(--muted); font-size: 12px; }
 .client-nav a { display: flex; align-items: center; padding: 12px; font-size: 11px; }

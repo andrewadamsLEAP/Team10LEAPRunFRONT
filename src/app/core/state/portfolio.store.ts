@@ -1,6 +1,7 @@
 import { HttpClient } from "@angular/common/http"
-import { Injectable, signal } from "@angular/core"
-import { EMPTY, Subscription, interval, map, startWith, switchMap, tap, catchError } from "rxjs"
+import { inject, Injectable, signal } from "@angular/core"
+import { map, tap } from "rxjs"
+import { EMPTY, Subscription, catchError, interval, startWith, switchMap } from "rxjs"
 import {
   Account,
   Asset,
@@ -12,7 +13,9 @@ import {
   initialOrders,
   initialReporters,
   initialTransactions,
+  Instrument,
 } from "../models/data"
+import { MarketDataService } from "../api/market-data.service"
 
 export type Position = {
   client: string
@@ -39,25 +42,13 @@ export type Holding = {
 export type QuantityResponse = {
   quantity: number
 }
-export type MarketPrice = {
-  ticker: string
-  ask_price: number | null
-  ask_size: number | null
-  ask_exchange: string | null
-  bid_price: number | null
-  bid_size: number | null
-  bid_exchange: string | null
-  tape: string | null
-  quote_timestamp: string | null
-  recorded_at: string
-  asset_type?: "STOCK" | "CRYPTO" | "FOREX"
-}
-export type RefreshStatus = {
-  lastStartedAt: string | null
-  lastCompletedAt: string | null
-  lastFailure: string | null
-  successfulTickerCount: number
-  failedTickerCount: number
+export type ClientProfile = {
+  clientId: number
+  email: string | null
+  username: string | null
+  firstName: string | null
+  lastName: string | null
+  cashAmount: number
 }
 export const timestamp = () =>
   new Intl.DateTimeFormat("en-US", {
@@ -71,13 +62,22 @@ export const timestamp = () =>
 
 @Injectable({ providedIn: "root" })
 export default class Store {
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly marketDataService: MarketDataService,
+  ) {}
   private marketPolling?: Subscription
   private readonly assetsState = signal(structuredClone(assets))
+  private readonly priceFlashState = signal<Record<string, boolean>>({})
   get assets() {
     return this.assetsState()
   }
+  readonly instruments = signal<Instrument[]>([])
+  readonly instrumentLoading = signal(false)
+  readonly instrumentError = signal<string | null>(null)
+  readonly selectedInstrument = signal<Instrument | null>(null)
   session = signal<Session | null>(null)
+  clientProfile = signal<ClientProfile | null>(null)
   clients = signal(structuredClone(initialClients))
   reporters = signal(structuredClone(initialReporters))
   orders = signal(structuredClone(initialOrders))
@@ -96,6 +96,12 @@ export default class Store {
   ])
   get account() {
     return this.clients().find((a) => a.username === this.session()?.username)
+  }
+  setClientProfile(profile: ClientProfile) {
+    this.clientProfile.set(profile)
+  }
+  clearClientProfile() {
+    this.clientProfile.set(null)
   }
   get name() {
     const session = this.session()
@@ -137,10 +143,20 @@ export default class Store {
       0,
     )
   }
-  loadMarketData() {
-    this.http
-      .get<MarketPrice[]>("/api/v1/trading/market-data/prices")
-      .subscribe((records) => this.applyMarketPrices(records))
+  loadInstruments() {
+    this.instrumentLoading.set(true)
+    this.instrumentError.set(null)
+    this.marketDataService.getInstruments().subscribe({
+      next: (instruments) => {
+        this.instruments.set(instruments)
+        this.applyInstrumentPrices(instruments)
+        this.instrumentLoading.set(false)
+      },
+      error: () => {
+        this.instrumentError.set("Unable to load market instruments.")
+        this.instrumentLoading.set(false)
+      },
+    })
   }
   startMarketDataPolling() {
     if (this.marketPolling) return
@@ -148,50 +164,56 @@ export default class Store {
       .pipe(
         startWith(0),
         switchMap(() =>
-          this.http
-            .get<MarketPrice[]>("/api/v1/trading/market-data/prices")
+          this.marketDataService
+            .getInstruments()
             .pipe(catchError(() => EMPTY)),
         ),
       )
-      .subscribe((records) => this.applyMarketPrices(records))
+      .subscribe((instruments) => {
+        this.instruments.set(instruments)
+        this.applyInstrumentPrices(instruments)
+      })
   }
-  getLatestPrice(ticker: string) {
-    return this.http.get<MarketPrice[]>(
-      `/api/v1/trading/market-data/prices/${encodeURIComponent(this.backendTicker(ticker))}`,
+  priceChanged(symbol: string) {
+    return this.priceFlashState()[symbol] ?? false
+  }
+  private applyInstrumentPrices(instruments: Instrument[]) {
+    const nextPrices = new Map(
+      instruments.map((instrument) => [
+        instrument.ticker.replace("-", "/"),
+        instrument.askPrice ?? instrument.bidPrice,
+      ]),
     )
-  }
-  getPriceHistory(ticker: string, from?: string, to?: string) {
-    const url = `/api/v1/trading/market-data/prices/${encodeURIComponent(this.backendTicker(ticker))}/history`
-    const params = from && to
-      ? `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
-      : ""
-    return this.http.get<MarketPrice[]>(`${url}${params}`)
-  }
-  getMarketTickers() {
-    return this.http.get<string[]>("/api/v1/trading/market-data/tickers")
-  }
-  getRefreshStatus() {
-    return this.http.get<RefreshStatus>("/api/v1/trading/market-data/refresh/status")
-  }
-  refreshMarketData() {
-    return this.http
-      .get<MarketPrice[]>("/api/v1/trading/market-data/refresh")
-      .pipe(tap((records) => this.applyMarketPrices(records)))
-  }
-  private applyMarketPrices(records: MarketPrice[]) {
-    const prices = new Map(records.map((record) => [this.displayTicker(record.ticker), record]))
+    const currentPrices = new Map(this.assetsState().map((asset) => [asset.symbol, asset.price]))
+    const changed: Record<string, boolean> = {}
+    for (const [symbol, price] of nextPrices) {
+      if (price != null && currentPrices.has(symbol) && currentPrices.get(symbol) !== price) {
+        changed[symbol] = true
+        setTimeout(() => {
+          this.priceFlashState.update((flashes) => ({ ...flashes, [symbol]: false }))
+        }, 900)
+      }
+    }
+    this.priceFlashState.update((flashes) => ({ ...flashes, ...changed }))
     this.assetsState.update((current) => current.map((asset) => {
-      const quote = prices.get(asset.symbol)
-      if (!quote) return asset
-      const price = quote.ask_price ?? quote.bid_price
-      return price == null ? asset : { ...asset, price, volume: String(quote.ask_size ?? quote.bid_size ?? asset.volume) }
+      const price = nextPrices.get(asset.symbol)
+      return price == null ? asset : { ...asset, price }
     }))
   }
-  private displayTicker(ticker: string) {
-    return ticker.replace("-", "/")
-  }
-  private backendTicker(ticker: string) {
-    return ticker.replace("/", "-")
+  loadInstrument(ticker: string) {
+    this.instrumentLoading.set(true)
+    this.instrumentError.set(null)
+    this.marketDataService.getInstrument(ticker).subscribe({
+      next: (instrument) => {
+        this.selectedInstrument.set(instrument)
+        this.instrumentLoading.set(false)
+      },
+      error: () => {
+        this.selectedInstrument.set(null)
+        this.instrumentError.set("Unable to load this instrument.")
+        this.instrumentLoading.set(false)
+      },
+    })
   }
   loadHoldings() {
     this.http.get<Holding[]>("/api/v1/holdings").subscribe((records) => {
@@ -266,6 +288,7 @@ export default class Store {
   }
   login(role: Role, rawUsername: string, email = "", fullName = "") {
     const username = rawUsername.trim().toLowerCase()
+    this.clearClientProfile()
     const list = role === "client" ? this.clients() : this.reporters()
     /*
     if (
@@ -292,6 +315,29 @@ export default class Store {
       ])
     }
     this.session.set({ role, username })
+  }
+  updateProfile(input: { username: string; firstName: string; lastName: string }) {
+    const current = this.session()
+    if (!current || current.role !== "client") throw new Error("Client access required.")
+    const username = input.username.trim().toLowerCase()
+    if (!username) throw new Error("Username is required.")
+    if (this.clients().some((account) =>
+      account.username === username && account.username !== current.username
+    )) {
+      throw new Error("Username already exists.")
+    }
+    this.clients.update((items) =>
+      items.map((account) =>
+        account.username !== current.username
+          ? account
+          : {
+              ...account,
+              username,
+              fullName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+            },
+      ),
+    )
+    this.session.set({ ...current, username })
   }
   private updateCash(delta: number) {
     this.clients.update((items) =>

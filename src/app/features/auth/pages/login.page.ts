@@ -171,6 +171,7 @@ export default class Auth {
 
         // Sync session in portfolio.store.ts
         const resolvedRole = this.tokenStore.userRole()
+        this.store.clearClientProfile()
         this.store.session.set({ role: resolvedRole, username: identifier })
         if (resolvedRole === "client") {
           this.store.loadHoldings()

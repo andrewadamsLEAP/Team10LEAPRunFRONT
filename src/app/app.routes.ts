@@ -43,6 +43,8 @@ const loadAnalytics = () =>
   import(
     "./features/platform-analytics/pages/platform-analytics.page"
   ).then((m) => m.default)
+const loadProfilePage = () =>
+  import("./features/profile/profile.page").then((m) => m.default)
 
 const employeeChildren: Routes = [
   { path: "orders", loadComponent: loadOrdersPage },
@@ -75,6 +77,7 @@ export const routes: Routes = [
     data: { role: "client" },
     children: [
       { path: "home", loadComponent: loadDashboard },
+      { path: "account", loadComponent: loadProfilePage },
       {
         path: "analytics",
         loadComponent: loadClientAnalyticsPage,

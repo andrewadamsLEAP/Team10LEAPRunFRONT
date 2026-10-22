@@ -19,19 +19,22 @@ const backendHoldings = [
   { clientId: 47, ticker: "AAPL", quantity: 36 },
   { clientId: 47, ticker: "MSFT", quantity: 12 },
 ]
-const backendMarketPrices = [
+const backendInstruments = [
   {
     ticker: "AAPL",
-    ask_price: 250.25,
-    ask_size: 100,
-    ask_exchange: "Q",
-    bid_price: 250.1,
-    bid_size: 100,
-    bid_exchange: "Q",
-    tape: "C",
-    quote_timestamp: "2026-10-22T14:30:00Z",
-    recorded_at: "2026-10-22T14:30:02Z",
     asset_type: "STOCK",
+    displayName: "Apple Inc.",
+    previousClose: 249,
+    open: 249.5,
+    volume: 100,
+    averageVolume: 100,
+    bidPrice: 250.1,
+    askPrice: 250.25,
+    bidSize: 100,
+    askSize: 100,
+    quoteTimestamp: "2026-10-22T14:30:00Z",
+    recordedAt: "2026-10-22T14:30:02Z",
+    changePercent: 0.5,
   },
 ]
 
@@ -57,6 +60,16 @@ class FakeHttpClient {
       amount,
       timestamp: "2026-10-22T15:00:00Z",
     })
+  }
+}
+
+class FakeMarketDataService {
+  getInstruments() {
+    return of(backendInstruments)
+  }
+
+  getInstrument() {
+    return of(null)
   }
 }
 
@@ -94,7 +107,7 @@ try {
     pathToFileURL(join(temporary, "store.mjs"))
   )
   const http = new FakeHttpClient()
-  const store = new Store(http)
+  const store = new Store(http, new FakeMarketDataService())
   store.login("client", "newclient")
   assert.equal(store.cash, 0)
   assert.equal(store.name, "newclient")
@@ -146,8 +159,8 @@ try {
   )
   assert.equal((await store.getHolding("AAPL").toPromise()).quantity, 36)
   assert.equal((await store.getHoldingQuantity("AAPL").toPromise()).quantity, 36)
-  store.loadMarketData()
-  assert.equal(store.assets.find((asset) => asset.symbol === "AAPL").price, 250.25)
+  store.loadInstruments()
+  assert.equal(store.instruments()[0].askPrice, 250.25)
   store.login("reporter", "rpatel")
   assert.equal(store.name, "Rina Patel")
   assert.throws(
