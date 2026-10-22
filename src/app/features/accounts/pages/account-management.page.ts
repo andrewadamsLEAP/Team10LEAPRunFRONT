@@ -24,16 +24,24 @@ type ReporterApiResponse =
       content?: ReporterApiRecord[]
     }
 
+type ClientAdminRecord = {
+  clientId: number | string
+  username: string
+  firstName: string
+  lastName: string
+  cashAmount: number
+}
+
 @Component({
   selector: "app-account-management-page",
   standalone: true,
   imports: [CurrencyPipe, FormsModule, RouterLink],
   template: `
     <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">Account management</span><h1>{{ reporters ? 'Reporter accounts' : 'Client accounts' }}</h1><p>{{ reporters ? 'Reporter account directory.' : 'Create, edit, and manage account access.' }}</p></div>@if (!reporters) { <button class="primary-button" (click)="create()">Add account</button> }</div>
-      <section class="surface data-surface"><div class="data-table accounts-table admin" [class.reporter-accounts]="reporters"><div class="data-row data-head"><span>Username</span><span>Full name</span><span>Email</span>@if (reporters) { <span>Role</span> } @else { <span>Cash</span><span>Actions</span> }</div>
-        @if (reporters && loading()) { <p class="empty-state" role="status">Loading reporter accounts…</p> }
-        @else if (reporters && loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
-        @else { @for (a of accounts; track a.id) { <div class="data-row">@if (reporters) { <strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span> } @else { <a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']"><strong>{{ a.username }}</strong></a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.fullName || a.username }}</a> }<span>{{ a.email || '—' }}</span>@if (reporters) { <span>{{ a.role || '—' }}</span> } @else { <span>{{ a.cash | currency:'USD' }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button class="danger" (click)="remove(a)">Delete</button></div> }</div> } @empty { <p class="empty-state">No accounts yet.</p> } }
+      <section class="surface data-surface"><div class="data-table accounts-table admin" [class.reporter-accounts]="reporters"><div class="data-row data-head"><span>Username</span>@if (reporters) { <span>Full name</span><span>Email</span><span>Role</span> } @else { <span>First name</span><span>Last name</span><span>Cash</span><span>Actions</span> }</div>
+        @if (loading()) { <p class="empty-state" role="status">Loading {{ reporters ? 'reporter' : 'client' }} accounts…</p> }
+        @else if (loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
+        @else { @for (a of accounts; track a.id) { <div class="data-row">@if (reporters) { <strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span><span>{{ a.email || '—' }}</span><span>{{ a.role || '—' }}</span> } @else { <a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']"><strong>{{ a.username }}</strong></a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.firstName || '—' }}</a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.lastName || '—' }}</a><span>{{ a.cash | currency:'USD' }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button class="danger" (click)="remove(a)">Delete</button></div> }</div> } @empty { <p class="empty-state">No accounts yet.</p> } }
       </div></section>
     </div>
     @if (draft; as d) {
@@ -55,35 +63,65 @@ export default class AccountManagementPage implements OnInit {
   loadError = signal("")
 
   ngOnInit() {
-    if (!this.reporters) return
-
     this.loading.set(true)
     this.loadError.set("")
+    if (this.reporters) {
+      this.http
+        .get<ReporterApiResponse>(
+          `${this.apiBasePath}/v1/employees/admin/reporters`,
+          { timeout: 15000 },
+        )
+        .subscribe({
+          next: (response) => {
+            try {
+              const records = this.reporterRecords(response)
+              this.store.reporters.set(records.map((record, index) => this.toAccount(record, index)))
+            } catch (error) {
+              this.loadError.set((error as Error).message)
+            } finally {
+              this.loading.set(false)
+            }
+          },
+          error: (error: { error?: { message?: string }; message?: string }) => {
+            this.setLoadError(error, "reporter")
+          },
+        })
+      return
+    }
+
     this.http
-      .get<ReporterApiResponse>(
-        `${this.apiBasePath}/v1/employees/admin/reporters`,
-        { timeout: 15000 },
-      )
+      .get<ClientAdminRecord[]>(`${this.apiBasePath}/v1/employees/admin`, {
+        timeout: 15000,
+      })
       .subscribe({
-        next: (response) => {
-          try {
-            const records = this.reporterRecords(response)
-            this.store.reporters.set(records.map((record, index) => this.toAccount(record, index)))
-          } catch (error) {
-            this.loadError.set((error as Error).message)
-          } finally {
-            this.loading.set(false)
-          }
-        },
-        error: (error: { error?: { message?: string }; message?: string }) => {
-          this.loadError.set(
-            error.error?.message ||
-              error.message ||
-              "Unable to load reporter accounts. Check that the Spring Boot API is running and reachable.",
-          )
+        next: (records) => {
+          this.store.clients.set(records.map((record) => ({
+            id: Number(record.clientId),
+            username: record.username,
+            fullName: [record.firstName, record.lastName].filter(Boolean).join(" "),
+            firstName: record.firstName,
+            lastName: record.lastName,
+            email: "",
+            cash: Number(record.cashAmount),
+          })))
           this.loading.set(false)
         },
+        error: (error: { error?: { message?: string }; message?: string }) => {
+          this.setLoadError(error, "client")
+        },
       })
+  }
+
+  private setLoadError(
+    error: { error?: { message?: string }; message?: string },
+    accountType: "client" | "reporter",
+  ) {
+    this.loadError.set(
+      error.error?.message ||
+        error.message ||
+        `Unable to load ${accountType} accounts. Check that the Spring Boot API is running and reachable.`,
+    )
+    this.loading.set(false)
   }
 
   private reporterRecords(response: ReporterApiResponse): ReporterApiRecord[] {

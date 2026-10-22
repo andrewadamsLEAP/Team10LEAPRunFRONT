@@ -24,6 +24,28 @@
 .transaction-table.employee-transactions { min-width: 850px; max-height: calc(100vh - 220px); overflow-y: auto; scrollbar-gutter: stable; }
 .transaction-table.employee-transactions .data-row { grid-template-columns: 1.1fr 1fr .9fr 1fr 1.2fr; padding-inline: 22px; column-gap: 24px; }
 .transaction-table.employee-transactions .data-head { position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--line); background: #f9fbfa; }
+.client-history-intro { margin-bottom: 27px; }
+.client-history-sections { display: grid; gap: 25px; }
+.history-section { min-width: 0; }
+.history-section-heading { margin: 0 2px 11px; display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.history-section-heading h2 { margin: 5px 0 0; color: var(--ink); font: 600 17px "Manrope", sans-serif; letter-spacing: -.03em; }
+.history-count { padding: 6px 10px; border: 1px solid #dce8e2; border-radius: 20px; background: #fff; color: var(--muted); font-size: 9px; white-space: nowrap; }
+.history-table-card { min-width: 0; border-radius: 9px; }
+.history-table-scroll { overflow-x: auto; }
+.history-table { min-width: 900px; }
+.history-orders-table .data-row { grid-template-columns: .72fr 1fr .62fr .65fr .8fr .82fr .72fr 1.25fr; }
+.history-transactions-table { min-width: 760px; }
+.history-transactions-table .data-row { grid-template-columns: .9fr 1.05fr .8fr .85fr 1.3fr; }
+.history-table .data-row { min-height: 52px; padding-inline: 20px; column-gap: 15px; }
+.history-table .data-row.data-head { min-height: 40px; position: sticky; top: 0; z-index: 1; border-bottom: 1px solid var(--line); background: #f7faf8; color: #748179; font-size: 8px; }
+.history-table .data-row:not(.data-head):hover { background: #fbfdfc; }
+.history-table .data-row > span, .history-table .data-row > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-table .ticker-cell { color: var(--green-dark); font-weight: 700; }
+.history-status { width: fit-content; padding: 4px 8px; border-radius: 999px; background: #edf6f1; color: #287552; font-size: 8px; font-style: normal; font-weight: 700; }
+.history-status.pending { background: #fff5df; color: #9a6b12; }
+.history-status.cancelled, .history-status.rejected { background: #fff0f0; color: #b4434c; }
+.history-state { margin: 0; padding: 26px 20px; color: var(--muted); font-size: 11px; text-align: center; }
+.history-state.error { color: var(--red); }
 .holdings-table .data-row { grid-template-columns: 1.5fr .8fr 1fr 1fr .9fr 1fr; }
 .holding-name { display: flex; align-items: center; gap: 8px; }
 .holding-name b { display: flex; flex-direction: column; gap: 2px; }

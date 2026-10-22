@@ -1,0 +1,156 @@
+<div class="page-wrap">
+  <div class="page-intro">
+    <div>
+      <span class="eyebrow">All-client insights</span>
+      <h1>Platform analytics</h1>
+      <p>Account and trading activity across the platform.</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="empty-state">Loading platform analytics...</p>
+  }
+
+  @if (error()) {
+    <p class="form-error" role="alert">{{ error() }}</p>
+  }
+
+  @if (analytics(); as data) {
+    <section class="client-count-card">
+      <div class="client-count-heading">
+        <span class="eyebrow">Overview</span>
+        <h2>Clients Information</h2>
+      </div>
+      <div class="client-count-metrics">
+        <div class="client-count-metric">
+          <span>Total clients</span>
+          <strong>{{ data.total_clients }}</strong>
+        </div>
+        <div class="client-count-metric">
+          <span>Active clients</span>
+          <strong>{{ data.active_clients }}</strong>
+        </div>
+        <div class="client-count-metric">
+          <span>Inactive clients</span>
+          <strong>{{ data.inactive_clients }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="stats-grid">
+      <section class="stat-card">
+        <span>Total trades</span>
+        <strong>{{ data.total_trades }}</strong>
+      </section>
+      <section class="stat-card">
+        <span>Total volume</span>
+        <strong>{{ data.total_volumes | currency:'USD' }}</strong>
+      </section>
+      <section class="stat-card">
+        <span>Average trade value</span>
+        <strong>{{ data.avg_trade_value | currency:'USD' }}</strong>
+      </section>
+      <section class="stat-card">
+        <span>Active client percentage</span>
+        <strong>{{ data.active_clients_percentage }}%</strong>
+      </section>
+    </div>
+
+    <section class="surface top-active-clients">
+      <div class="section-title">
+        <div>
+          <span class="eyebrow">Client activity</span>
+          <h2>Top active clients</h2>
+        </div>
+      </div>
+      <div class="top-client-grid">
+        @for (client of topActiveClients; track client.client_id) {
+          <article class="top-client-card">
+            <div class="client-avatar">
+              {{ client.first_name.charAt(0) }}{{ client.last_name.charAt(0) }}
+            </div>
+            <div class="client-details">
+              <strong>{{ client.first_name }} {{ client.last_name }}</strong>
+              <span>Client ID {{ client.client_id }}</span>
+            </div>
+            <div class="client-metric">
+              <strong>{{ client.trade_count }}</strong>
+              <span>trades</span>
+            </div>
+            <div class="client-metric">
+              <strong>{{ client.volume | currency:'USD':'symbol':'1.0-0' }}</strong>
+              <span>volume</span>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No active client data available.</p>
+        }
+      </div>
+    </section>
+  }
+
+  <div class="analytics-grid">
+    <section class="surface analytics-chart">
+      <div class="section-title">
+        <div>
+          <span class="eyebrow">Activity</span>
+          <h2>Trading trends</h2>
+        </div>
+      </div>
+      @if (trends().length) {
+        <div class="platform-trends-chart">
+          <svg
+            viewBox="0 0 700 240"
+            preserveAspectRatio="none"
+            role="img"
+            aria-label="Trading volume trends"
+          >
+            <path
+              class="trend-grid-line"
+              d="M0 30H700M0 90H700M0 150H700M0 210H700"
+            />
+            <polyline
+              class="trend-line"
+              [attr.points]="trendPoints"
+              fill="none"
+            />
+            @for (point of trendChartPoints; track point.period) {
+              <circle
+                class="trend-point"
+                [attr.cx]="point.x"
+                [attr.cy]="point.y"
+                r="4"
+              >
+                <title>{{ point.period }}: {{ point.volume | currency:'USD' }}</title>
+              </circle>
+            }
+          </svg>
+          <div class="trend-labels">
+            @for (trend of trends(); track trend.period) {
+              <span>{{ trend.period }}</span>
+            }
+          </div>
+        </div>
+      } @else if (!loading()) {
+        <p class="empty-state">No trend data available.</p>
+      }
+    </section>
+
+    <section class="surface activity-breakdown">
+      <div class="section-title">
+        <h2>Order breakdown</h2>
+      </div>
+      @for (item of orderBreakdown; track item.label) {
+        <div class="breakdown">
+          <div>
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </div>
+          <i>
+            <b [style.width.%]="orderTotal ? item.value / orderTotal * 100 : 0"></b>
+          </i>
+        </div>
+      }
+    </section>
+  </div>
+</div>

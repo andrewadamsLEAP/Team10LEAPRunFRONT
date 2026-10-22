@@ -172,6 +172,10 @@ export default class Auth {
         // Sync session in portfolio.store.ts
         const resolvedRole = this.tokenStore.userRole()
         this.store.session.set({ role: resolvedRole, username: identifier })
+        if (resolvedRole === "client") {
+          this.store.loadHoldings()
+          this.store.loadClientTransactions()
+        }
 
         // Navigate to user's dashboard
         void this.router.navigate([resolvedRole, resolvedRole === 'client' ? 'home' : 'orders'])

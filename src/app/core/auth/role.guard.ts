@@ -3,31 +3,28 @@ import { CanActivateFn, Router } from "@angular/router"
 import Store from "../state/portfolio.store"
 import { TokenStore } from "./token-store.service"
 
+const restoreSession = (store: Store, tokenStore: TokenStore) => {
+  const user = tokenStore.currentUser()
+  if (!store.session() && user && tokenStore.isAuthenticated()) {
+    store.session.set({ role: tokenStore.userRole(), username: user.username })
+    if (tokenStore.userRole() === "client") {
+      store.loadHoldings()
+      store.loadClientTransactions()
+    }
+  }
+  return user && tokenStore.isAuthenticated()
+}
+
 export const roleGuard: CanActivateFn = (route) => {
   const store = inject(Store)
   const tokenStore = inject(TokenStore)
   const router = inject(Router)
-
-  if (!tokenStore.isAuthenticated()) {
+  const authenticated = restoreSession(store, tokenStore)
+  const session = store.session()
+  if (!authenticated || !session) {
     tokenStore.clear()
     return router.createUrlTree(["/login"])
   }
-
-  const tokenUser = tokenStore.currentUser()
-  const session =
-    store.session() ??
-    (tokenUser
-      ? {
-          role: tokenStore.userRole(),
-          username: tokenUser.username,
-        }
-      : null)
-
-  if (session && !store.session()) {
-    store.session.set(session)
-  }
-
-  if (!session) return router.createUrlTree(["/login"])
   const role = [...route.pathFromRoot]
     .reverse()
     .find((node) => node.data["role"])?.data["role"]
@@ -38,4 +35,18 @@ export const roleGuard: CanActivateFn = (route) => {
       session.role === "client" ? "home" : "orders",
     ])
   )
+}
+
+export const authPageGuard: CanActivateFn = () => {
+  const store = inject(Store)
+  const tokenStore = inject(TokenStore)
+  const router = inject(Router)
+  if (restoreSession(store, tokenStore)) {
+    const role = store.session()!.role
+    return router.createUrlTree([
+      role,
+      role === "client" ? "home" : "orders",
+    ])
+  }
+  return true
 }

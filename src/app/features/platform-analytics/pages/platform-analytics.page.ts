@@ -1,20 +1,82 @@
-import { Component, inject } from "@angular/core"
+import { Component, inject, OnInit, signal } from "@angular/core"
 import { CurrencyPipe } from "@angular/common"
+import { forkJoin } from "rxjs"
 import Store from "../../../core/state/portfolio.store"
-import Chart from "../../../shared/charts/price-chart.component"
+import {
+  PlatformAnalyticsService,
+  type PlatformAnalytics,
+  type ClientOrderStatus,
+  type PlatformTrend,
+} from "../../../core/api/auth/api/platform-analytics.service"
 
 @Component({
   selector: "app-analytics",
   standalone: true,
-  imports: [CurrencyPipe, Chart],
-  template: `<div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">All-client insights</span><h1>Platform analytics</h1><p>Account and trading activity across the platform.</p></div></div>
-    <div class="stats-grid"><section class="stat-card"><span>Client accounts</span><strong>{{ store.clients().length }}</strong></section><section class="stat-card"><span>Client cash</span><strong>{{ cash | currency:'USD' }}</strong></section><section class="stat-card"><span>Total orders</span><strong>{{ store.orders().length }}</strong></section><section class="stat-card"><span>Trading volume</span><strong>{{ volume | currency:'USD' }}</strong></section></div>
-    <div class="analytics-grid"><section class="surface analytics-chart"><div class="section-title"><div><span class="eyebrow">Activity</span><h2>Trading overview</h2></div></div><app-chart/></section><section class="surface activity-breakdown"><div class="section-title"><h2>Order breakdown</h2></div>@for (status of statuses; track status) { <div class="breakdown"><div><span>{{ status }}</span><strong>{{ count(status) }}</strong></div><i><b [style.width.%]="store.orders().length ? count(status) / store.orders().length * 100 : 0"></b></i></div> }</section></div>
-    </div>`,
+  imports: [CurrencyPipe],
+  templateUrl: "./platform-analytics.page.html",
+  styleUrls: ["./platform-analytics.page.scss"],
 })
-export default class Analytics {
+export default class Analytics implements OnInit {
+  private readonly analyticsApi = inject(PlatformAnalyticsService)
   store = inject(Store)
-  statuses = ["Fulfilled", "Pending", "Cancelled"]
+  analytics = signal<PlatformAnalytics | null>(null)
+  trends = signal<PlatformTrend[]>([])
+  orderStatuses = signal<ClientOrderStatus[]>([])
+  loading = signal(false)
+  error = signal("")
+
+  ngOnInit() {
+    this.loading.set(true)
+    forkJoin({
+      analytics: this.analyticsApi.getAnalytics(),
+      trends: this.analyticsApi.getTrends(),
+      orderStatuses: this.analyticsApi.getOrderStatus(),
+    }).subscribe({
+      next: ({ analytics, trends, orderStatuses }) => {
+        this.analytics.set(analytics)
+        this.trends.set(trends)
+        this.orderStatuses.set(orderStatuses)
+        this.loading.set(false)
+      },
+      error: (error: { error?: { message?: string }; message?: string }) => {
+        this.error.set(error.error?.message || error.message || "Unable to load platform analytics.")
+        this.loading.set(false)
+      },
+    })
+  }
+
+  get trendChartPoints() {
+    const values = this.trends().map((trend) => trend.total_volume)
+    const max = Math.max(...values, 1)
+    const lastIndex = Math.max(values.length - 1, 1)
+    return this.trends().map((trend, index) => ({
+      period: trend.period,
+      volume: trend.total_volume,
+      x: (index / lastIndex) * 700,
+      y: 210 - (trend.total_volume / max) * 180,
+    }))
+  }
+
+  get trendPoints() {
+    return this.trendChartPoints.map((point) => `${point.x},${point.y}`).join(" ")
+  }
+
+  get orderBreakdown() {
+    return [
+      { label: "Fulfilled", value: this.orderStatuses().reduce((sum, item) => sum + item.fulfilled_orders, 0) },
+      { label: "Pending", value: this.orderStatuses().reduce((sum, item) => sum + item.pending_orders, 0) },
+      { label: "Cancelled", value: this.orderStatuses().reduce((sum, item) => sum + item.cancelled_orders, 0) },
+    ]
+  }
+
+  get orderTotal() {
+    return this.orderBreakdown.reduce((sum, item) => sum + item.value, 0)
+  }
+
+  get topActiveClients() {
+    return this.analytics()?.top_active_clients.slice(0, 3) ?? []
+  }
+
   get cash() {
     return this.store.clients().reduce((sum, a) => sum + a.cash, 0)
   }
@@ -23,8 +85,5 @@ export default class Analytics {
       .orders()
       .filter((o) => o.status === "Fulfilled")
       .reduce((sum, o) => sum + o.price * o.quantity, 0)
-  }
-  count(status: string) {
-    return this.store.orders().filter((o) => o.status === status).length
   }
 }

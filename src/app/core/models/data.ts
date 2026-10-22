@@ -58,6 +58,8 @@ export type Account = {
   username: string
   email: string
   fullName: string
+  firstName?: string
+  lastName?: string
   cash: number
   role?: string
   //status: "Active" | "Suspended"
