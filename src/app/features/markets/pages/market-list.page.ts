@@ -3,6 +3,7 @@ import { CurrencyPipe } from "@angular/common"
 import { FormsModule } from "@angular/forms"
 import { RouterLink } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
+import { Instrument } from "../../../core/models/data"
 
 @Component({
   selector: "app-market-list-page",
@@ -10,8 +11,13 @@ import Store from "../../../core/state/portfolio.store"
   imports: [CurrencyPipe, FormsModule, RouterLink],
   template: `
     <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">Asset discovery</span><h1>Explore markets</h1><p>Stocks, crypto, and forex. All in USD.</p></div></div>
-    <section class="surface"><div class="funds-panel"><label class="fund-input"><input [(ngModel)]="query" aria-label="Search assets" placeholder="Search name or symbol"></label><div class="fund-tabs">@for (k of kinds; track k) { <button [class.active]="kind === k" (click)="kind = k">{{ k }}</button> }</div></div>
-      <div class="ticker-table">@for (a of filtered; track a.symbol) { <a class="ticker-row" [routerLink]="['/client/ticker', a.symbol]"><span class="ticker-name"><i>{{ a.symbol[0] }}</i><b>{{ a.symbol }}<small>{{ a.name }}</small></b></span><span>{{ a.kind }}</span><strong>{{ a.price | currency:'USD':'symbol':(a.kind === 'Forex' ? '1.4-4' : '1.2-2') }}</strong><span [class]="a.change >= 0 ? 'positive' : 'negative'">{{ a.change }}%</span><span>{{ a.volume }}</span><span>›</span></a> } @empty { <p class="empty-state">No matching assets.</p> }</div>
+    <section class="surface"><div class="funds-panel"><label class="ticker-page-search"><input [(ngModel)]="query" aria-label="Search assets" placeholder="Search name or symbol"><span aria-hidden="true">⌕</span></label><div class="fund-tabs">@for (k of kinds; track k) { <button [class.active]="kind === k" (click)="kind = k">{{ k }}</button> }</div></div>
+      @if (store.instrumentLoading()) { <p class="empty-state">Loading instruments...</p> }
+      @if (store.instrumentError(); as error) { <p class="empty-state">{{ error }}</p> }
+      <div class="ticker-table">
+        <div class="ticker-row ticker-head" aria-hidden="true"><span>Instrument</span><span>Type</span><span>Price</span><span>Change</span><span>Volume</span><span>Avg Vol (30D)</span><span></span></div>
+        @for (a of filtered; track a.ticker) { <a class="ticker-row" [routerLink]="['/client/ticker', a.ticker]"><span class="ticker-name"><i>{{ a.ticker[0] }}</i><b><span>{{ a.ticker }}</span><small>{{ a.displayName || '—' }}</small></b></span><span>{{ displayKind(a.assetType) }}</span><strong>{{ currentPrice(a) | currency:'USD':'symbol':(a.assetType === 'FOREX' ? '1.4-4' : '1.2-2') }}</strong><span [class]="(a.changePercent ?? 0) >= 0 ? 'positive' : 'negative'">{{ formatChange(a.changePercent) }}</span><span>{{ formatVolume(a.volume) }}</span><span>{{ formatVolume(a.averageVolume) }}</span><span>›</span></a> } @empty { @if (!store.instrumentLoading()) { <p class="empty-state">No matching instruments.</p> } }
+      </div>
     </section></div>`,
 })
 export default class MarketListPage {
@@ -19,13 +25,37 @@ export default class MarketListPage {
   query = ""
   kind = "All"
   kinds = ["All", "Stock", "Crypto", "Forex"]
+  constructor() {
+    this.store.loadInstruments()
+  }
   get filtered() {
-    return this.store.assets.filter(
+    return this.store.instruments().filter(
       (a) =>
-        (this.kind === "All" || a.kind === this.kind) &&
-        `${a.symbol} ${a.name}`
-          .toLowerCase()
-          .includes(this.query.toLowerCase()),
+        (this.kind === "All" || this.displayKind(a.assetType) === this.kind) &&
+        [a.ticker, a.displayName]
+            .some((value) =>
+              (value ?? "").toLowerCase().includes(this.query.trim().toLowerCase()),
+            ),
     )
+  }
+  displayKind(assetType: "STOCK" | "CRYPTO" | "FOREX") {
+    return assetType[0] + assetType.slice(1).toLowerCase()
+  }
+  currentPrice(instrument: Instrument) {
+    if (instrument.bidPrice !== null && instrument.askPrice !== null) {
+      return (instrument.bidPrice + instrument.askPrice) / 2
+    }
+    return instrument.bidPrice ?? instrument.askPrice
+  }
+  formatChange(change: number | null) {
+    if (change === null) return "—"
+    return `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`
+  }
+  formatVolume(volume: number | null) {
+    if (volume === null || !Number.isFinite(volume)) return "—"
+    if (Math.abs(volume) >= 1_000_000_000) return `${(volume / 1_000_000_000).toFixed(3)}B`
+    if (Math.abs(volume) >= 1_000_000) return `${(volume / 1_000_000).toFixed(3)}M`
+    if (Math.abs(volume) >= 1_000) return `${(volume / 1_000).toFixed(3)}K`
+    return volume.toLocaleString("en-US")
   }
 }

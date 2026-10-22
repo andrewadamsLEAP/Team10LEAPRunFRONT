@@ -12,7 +12,7 @@ import { Side } from "../../../core/models/data"
   imports: [CurrencyPipe, FormsModule],
   template: `
     @if (asset; as a) {
-      <div class="narrow-page"><button class="back-button" (click)="back()">‹ Back</button><section class="surface trade-card"><div class="trade-card-title"><i class="large-symbol">{{ a.symbol[0] }}</i><div><span>{{ review ? 'Review order' : 'Place an order' }}</span><h1>{{ a.symbol }}</h1><p>{{ a.name }}</p></div></div>
+      <div class="narrow-page"><button class="back-button" (click)="back()">‹ Back</button><section class="surface trade-card"><div class="trade-card-title"><i class="large-symbol">{{ a.symbol[0] }}</i><div><span>{{ review ? 'Review order' : 'Place an order' }}</span><h1>{{ a.symbol }}</h1><p>{{ displayName(a.symbol, a.name) }}</p></div></div>
         @if (!review) { <div class="side-switch"><button [class.active]="side === 'Buy'" class="buy" (click)="side = 'Buy'">Buy</button><button [class.active]="side === 'Sell'" class="sell" (click)="side = 'Sell'">Sell</button></div> }
         <label class="form-field"><span>Order type</span><div class="quantity-input static-field">Market</div></label>
         <label class="form-field"><span>Quantity</span><div class="quantity-input"><input type="number" min="0" [step]="a.kind === 'Stock' ? 1 : 0.000001" [(ngModel)]="quantity" [readonly]="review" aria-label="Order quantity"></div></label>
@@ -32,6 +32,14 @@ export default class TradePage {
   }
   get asset() {
     return this.store.assets.find((a) => a.symbol === this.symbol)
+  }
+  displayName(symbol: string, fallback: string) {
+    const normalizedSymbol = symbol.replace("/", "-").toLowerCase()
+    return (
+      this.store.instruments().find(
+        (instrument) => instrument.ticker.toLowerCase() === normalizedSymbol,
+      )?.displayName || fallback
+    )
   }
   side: Side =
     this.route.snapshot.queryParamMap.get("side") === "Sell" ? "Sell" : "Buy"

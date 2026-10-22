@@ -1,4 +1,4 @@
-import { Injectable, signal } from "@angular/core"
+import { inject, Injectable, signal } from "@angular/core"
 import {
   Account,
   Role,
@@ -8,7 +8,9 @@ import {
   initialOrders,
   initialReporters,
   initialTransactions,
+  Instrument,
 } from "../models/data"
+import { MarketDataService } from "../api/market-data.service"
 
 export type Position = {
   client: string
@@ -33,6 +35,11 @@ export const timestamp = () =>
 @Injectable({ providedIn: "root" })
 export default class Store {
   readonly assets = assets
+  readonly instruments = signal<Instrument[]>([])
+  readonly instrumentLoading = signal(false)
+  readonly instrumentError = signal<string | null>(null)
+  readonly selectedInstrument = signal<Instrument | null>(null)
+  private readonly marketDataService = inject(MarketDataService)
   session = signal<Session | null>(null)
   clients = signal(structuredClone(initialClients))
   reporters = signal(structuredClone(initialReporters))
@@ -85,6 +92,35 @@ export default class Store {
         p.quantity * this.assets.find((a) => a.symbol === p.symbol)!.price,
       0,
     )
+  }
+  loadInstruments() {
+    this.instrumentLoading.set(true)
+    this.instrumentError.set(null)
+    this.marketDataService.getInstruments().subscribe({
+      next: (instruments) => {
+        this.instruments.set(instruments)
+        this.instrumentLoading.set(false)
+      },
+      error: () => {
+        this.instrumentError.set("Unable to load market instruments.")
+        this.instrumentLoading.set(false)
+      },
+    })
+  }
+  loadInstrument(ticker: string) {
+    this.instrumentLoading.set(true)
+    this.instrumentError.set(null)
+    this.marketDataService.getInstrument(ticker).subscribe({
+      next: (instrument) => {
+        this.selectedInstrument.set(instrument)
+        this.instrumentLoading.set(false)
+      },
+      error: () => {
+        this.selectedInstrument.set(null)
+        this.instrumentError.set("Unable to load this instrument.")
+        this.instrumentLoading.set(false)
+      },
+    })
   }
   login(role: Role, rawUsername: string, email = "", fullName = "") {
     const username = rawUsername.trim().toLowerCase()

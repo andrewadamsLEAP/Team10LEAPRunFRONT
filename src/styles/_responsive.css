@@ -55,6 +55,7 @@
   .chart-surface .price-chart { height: 230px; }
   .funds-panel { flex-direction: column; align-items: stretch; }
   .fund-input { width: 100%; }
+  .ticker-page-search { width: 100%; }
   .stats-grid { grid-template-columns: 1fr; }
   .employee-main > header { padding-inline: 14px; }
 }
