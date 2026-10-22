@@ -7,6 +7,10 @@ const restoreSession = (store: Store, tokenStore: TokenStore) => {
   const user = tokenStore.currentUser()
   if (!store.session() && user && tokenStore.isAuthenticated()) {
     store.session.set({ role: tokenStore.userRole(), username: user.username })
+    if (tokenStore.userRole() === "client") {
+      store.loadHoldings()
+      store.loadClientTransactions()
+    }
   }
   return user && tokenStore.isAuthenticated()
 }

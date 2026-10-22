@@ -1,8 +1,11 @@
+import { HttpClient } from "@angular/common/http"
 import { Injectable, signal } from "@angular/core"
+import { map, tap } from "rxjs"
 import {
   Account,
   Role,
   Side,
+  Transaction,
   assets,
   initialClients,
   initialOrders,
@@ -19,6 +22,21 @@ export type Position = {
 type Session = {
   role: Role
   username: string
+}
+type BackendTransaction = {
+  transactionId: number
+  clientId: number
+  type: "DEPOSIT" | "WITHDRAWAL" | "PURCHASE"
+  amount: number
+  timestamp: string
+}
+export type Holding = {
+  clientId: number
+  ticker: string
+  quantity: number
+}
+export type QuantityResponse = {
+  quantity: number
 }
 export type ClientProfile = {
   clientId: number
@@ -40,6 +58,7 @@ export const timestamp = () =>
 
 @Injectable({ providedIn: "root" })
 export default class Store {
+  constructor(private readonly http: HttpClient) {}
   readonly assets = assets
   session = signal<Session | null>(null)
   clientProfile = signal<ClientProfile | null>(null)
@@ -47,6 +66,7 @@ export default class Store {
   reporters = signal(structuredClone(initialReporters))
   orders = signal(structuredClone(initialOrders))
   transactions = signal(structuredClone(initialTransactions))
+  private clientTransactionsLoaded = signal(false)
   positions = signal<Position[]>([
     { client: "jordanlee", symbol: "NVDA", quantity: 48, average: 118.24 },
     {
@@ -78,6 +98,12 @@ export default class Store {
     )
   }
   get cash() {
+    if (this.session()?.role === "client" && this.clientTransactionsLoaded()) {
+      return this.clientTransactions.reduce(
+        (balance, transaction) => balance + transaction.amount,
+        0,
+      )
+    }
     return this.account?.cash ?? 0
   }
   get holdings() {
@@ -100,6 +126,77 @@ export default class Store {
         p.quantity * this.assets.find((a) => a.symbol === p.symbol)!.price,
       0,
     )
+  }
+  loadHoldings() {
+    this.http.get<Holding[]>("/api/v1/holdings").subscribe((records) => {
+      const client = this.session()?.username ?? ""
+      this.positions.set(records.map((record) => this.toPosition(record, client)))
+    })
+  }
+  getHolding(ticker: string) {
+    return this.http.get<Holding>(`/api/v1/holdings/${encodeURIComponent(ticker)}`)
+  }
+  getHoldingQuantity(ticker: string) {
+    return this.http.get<QuantityResponse>(
+      `/api/v1/holdings/quantity?ticker=${encodeURIComponent(ticker)}`,
+    )
+  }
+  loadClientTransactions() {
+    this.http
+      .get<BackendTransaction[]>("/api/v1/trading/transactions")
+      .subscribe((records) => {
+        const client = this.session()?.username ?? ""
+        this.transactions.set(records.map((record) => this.toTransaction(record, client)))
+        this.clientTransactionsLoaded.set(true)
+      })
+  }
+  funds(type: "Deposit" | "Withdrawal", amount: number) {
+    if (this.session()?.role !== "client")
+      throw new Error("Client access required.")
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 3_000_000)
+      throw new Error("Enter a positive amount no more than $3,000,000.")
+    if (type === "Withdrawal" && amount > this.cash)
+      throw new Error("Enter a positive amount within your available balance.")
+
+    const endpoint = type === "Deposit" ? "deposit" : "withdrawal"
+    return this.http
+      .post<BackendTransaction>(
+        `/api/v1/trading/transactions/${endpoint}?amount=${encodeURIComponent(amount)}`,
+        null,
+      )
+      .pipe(
+        map((record) => this.toTransaction(record, this.session()!.username)),
+        tap((transaction) => {
+          this.updateCash(transaction.amount)
+          this.transactions.update((items) => [transaction, ...items])
+        }),
+      )
+  }
+  private toTransaction(record: BackendTransaction, client: string): Transaction {
+    const type = record.type === "DEPOSIT"
+      ? "Deposit"
+      : record.type === "WITHDRAWAL"
+        ? "Withdrawal"
+        : "Trade"
+    return {
+      id: String(record.transactionId),
+      client,
+      type,
+      amount:
+        type === "Withdrawal" || record.type === "PURCHASE"
+          ? -record.amount
+          : record.amount,
+      date: record.timestamp,
+      status: "Complete" as const,
+    }
+  }
+  private toPosition(record: Holding, client: string): Position {
+    return {
+      client,
+      symbol: record.ticker,
+      quantity: record.quantity,
+      average: this.assets.find((asset) => asset.symbol === record.ticker)?.price ?? 0,
+    }
   }
   login(role: Role, rawUsername: string, email = "", fullName = "") {
     const username = rawUsername.trim().toLowerCase()
@@ -162,30 +259,6 @@ export default class Store {
           : a,
       ),
     )
-  }
-  funds(type: "Deposit" | "Withdrawal", amount: number) {
-    if (this.session()?.role !== "client")
-      throw new Error("Client access required.")
-    if (
-      !Number.isFinite(amount) ||
-      amount <= 0 ||
-      (type === "Withdrawal" && amount > this.cash)
-    ) {
-      throw new Error("Enter a positive amount within your available balance.")
-    }
-    const signed = type === "Deposit" ? amount : -amount
-    this.updateCash(signed)
-    this.transactions.update((items) => [
-      {
-        id: `TRX-${crypto.randomUUID()}`,
-        client: this.session()!.username,
-        type,
-        amount: signed,
-        date: timestamp(),
-        status: "Complete",
-      },
-      ...items,
-    ])
   }
   trade(symbol: string, side: Side, quantity: number) {
     if (this.session()?.role !== "client")
