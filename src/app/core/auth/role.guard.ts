@@ -21,7 +21,10 @@ export const roleGuard: CanActivateFn = (route) => {
   const router = inject(Router)
   const authenticated = restoreSession(store, tokenStore)
   const session = store.session()
-  if (!authenticated || !session) return router.createUrlTree(["/login"])
+  if (!authenticated || !session) {
+    tokenStore.clear()
+    return router.createUrlTree(["/login"])
+  }
   const role = [...route.pathFromRoot]
     .reverse()
     .find((node) => node.data["role"])?.data["role"]

@@ -13,13 +13,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authRequest = isAuthRequest(req.url)
   const token = tokenStore.accessToken()
 
-  const authenticatedRequest = token && !authRequest
-    ? req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-    : req
+  const authenticatedRequest =
+    token && !authRequest
+      ? req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      : req
 
   return next(authenticatedRequest).pipe(
     catchError((error: HttpErrorResponse) => {

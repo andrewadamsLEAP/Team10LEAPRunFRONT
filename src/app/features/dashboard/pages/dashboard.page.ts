@@ -16,7 +16,7 @@ import Chart from "../../../shared/charts/price-chart.component"
       </div><app-chart [flat]="!store.holdings.length" [period]="period"/><div class="portfolio-stats"><div><span>Buying power</span><strong>{{ store.cash | currency:'USD' }}</strong></div><div><span>Invested</span><strong>{{ store.invested | currency:'USD' }}</strong></div><div><span>Positions</span><strong>{{ store.holdings.length }}</strong></div></div></section>
       <div class="content-grid"><section class="surface"><div class="section-title"><div><span class="eyebrow">Discover assets</span><h2>Trending tickers</h2></div></div>
         <div class="ticker-table"><div class="ticker-row ticker-head"><span>Asset</span><span>Market</span><span>Price</span><span>Today</span><span>Volume</span><span></span></div>
-          @for (a of store.assets; track a.symbol) { <a class="ticker-row" [routerLink]="['/client/ticker', a.symbol]"><span class="ticker-name"><i>{{ a.symbol[0] }}</i><b>{{ a.symbol }}<small>{{ a.name }}</small></b></span><span>{{ a.kind }}</span><strong>{{ a.price | currency:'USD':'symbol':(a.kind === 'Forex' ? '1.4-4' : '1.2-2') }}</strong><span [class]="a.change >= 0 ? 'positive' : 'negative'">{{ a.change > 0 ? '+' : '' }}{{ a.change }}%</span><span>{{ a.volume }}</span><span>›</span></a> }
+          @for (a of store.assets; track a.symbol) { <a class="ticker-row" [routerLink]="['/client/ticker', a.symbol]"><span class="ticker-name"><i>{{ a.symbol[0] }}</i><b>{{ a.symbol }}<small>{{ displayName(a.symbol, a.name) }}</small></b></span><span>{{ a.kind }}</span><strong>{{ a.price | currency:'USD':'symbol':(a.kind === 'Forex' ? '1.4-4' : '1.2-2') }}</strong><span [class]="a.change >= 0 ? 'positive' : 'negative'">{{ a.change > 0 ? '+' : '' }}{{ a.change }}%</span><span>{{ a.volume }}</span><span>›</span></a> }
         </div>
       </section><aside class="home-sidebar"><section class="surface"><div class="section-title small"><div><span class="eyebrow">Portfolio</span><h2>Top holdings</h2></div><a routerLink="/client/holdings">View all</a></div>
         @for (p of store.holdings.slice(0,3); track p.symbol) { <a class="mini-list-row" [routerLink]="['/client/ticker', p.symbol]"><i>{{ p.symbol[0] }}</i><span><b>{{ p.symbol }}</b><small>{{ p.quantity | number:'1.0-6' }} units</small></span><em>{{ positionValue(p.symbol, p.quantity) | currency:'USD' }}</em></a> } @empty { <p class="empty-state">No holdings yet. Explore markets to get started.</p> }
@@ -29,6 +29,14 @@ export default class DashboardPage {
   store = inject(Store)
   periods = ["1D", "1W", "1M", "1Y"]
   period = "1M"
+  displayName(symbol: string, fallback: string) {
+    const normalizedSymbol = symbol.replace("/", "-").toLowerCase()
+    return (
+      this.store.instruments().find(
+        (instrument) => instrument.ticker.toLowerCase() === normalizedSymbol,
+      )?.displayName || fallback
+    )
+  }
   positionValue(symbol: string, quantity: number) {
     return this.store.assets.find((a) => a.symbol === symbol)!.price * quantity
   }
