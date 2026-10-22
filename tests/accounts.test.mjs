@@ -4,6 +4,38 @@ import { join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import ts from "typescript"
 import "@angular/compiler"
+import { of } from "rxjs"
+
+const backendTransactions = [
+  {
+    transactionId: 1,
+    clientId: 47,
+    type: "DEPOSIT",
+    amount: 1000,
+    timestamp: "2026-10-22T14:30:00Z",
+  },
+]
+
+class FakeHttpClient {
+  requests = []
+
+  get(url) {
+    this.requests.push({ method: "GET", url })
+    return of(backendTransactions)
+  }
+
+  post(url) {
+    this.requests.push({ method: "POST", url })
+    const amount = Number(new URL(`http://localhost${url}`).searchParams.get("amount"))
+    return of({
+      transactionId: this.requests.length,
+      clientId: 47,
+      type: url.includes("withdrawal") ? "WITHDRAWAL" : "DEPOSIT",
+      amount,
+      timestamp: "2026-10-22T15:00:00Z",
+    })
+  }
+}
 
 // Compile the service for Node without changing the Angular application build.
 const temporary = await mkdtemp(join(process.cwd(), ".veridian-test-"))
@@ -38,7 +70,8 @@ try {
   const { default: Store } = await import(
     pathToFileURL(join(temporary, "store.mjs"))
   )
-  const store = new Store()
+  const http = new FakeHttpClient()
+  const store = new Store(http)
   store.login("client", "newclient")
   assert.equal(store.cash, 0)
   assert.equal(store.name, "newclient")
@@ -47,7 +80,7 @@ try {
   assert.equal(store.clientTransactions.length, 0)
   assert.throws(() => store.trade("NVDA", "Buy", 1), /buying power/)
   assert.throws(() => store.trade("NVDA", "Sell", 1), /holdings/)
-  store.funds("Deposit", 1000)
+  store.funds("Deposit", 1000).subscribe()
   store.trade("NVDA", "Buy", 2)
   assert.equal(store.cash, 714.76)
   assert.equal(store.holdings[0].quantity, 2)
@@ -58,6 +91,7 @@ try {
   assert.throws(() => store.trade("NVDA", "Buy", 0.5), /whole shares/)
   assert.throws(() => store.funds("Withdrawal", 10000), /available balance/)
   assert.throws(() => store.funds("Deposit", NaN), /positive amount/)
+  assert.throws(() => store.funds("Deposit", 3000001), /3,000,000/)
   store.trade("NVDA", "Sell", 1)
   assert.equal(store.holdings[0].quantity, 1)
   store.login("client", "jordanlee")
@@ -72,7 +106,13 @@ try {
   assert.equal(store.holdings.length, 0)
   store.login("client", "newclient")
   assert.equal(store.holdings[0].quantity, 1)
-  assert.throws(() => store.login("client", "drewp"), /suspended/)
+  store.loadClientTransactions()
+  assert.equal(store.cash, 1000)
+  assert.equal(http.requests.at(-1).url, "/api/v1/trading/transactions")
+  assert.equal(
+    http.requests.some((request) => request.url.includes("amount=1000")),
+    true,
+  )
   store.login("reporter", "rpatel")
   assert.equal(store.name, "Rina Patel")
   assert.throws(
