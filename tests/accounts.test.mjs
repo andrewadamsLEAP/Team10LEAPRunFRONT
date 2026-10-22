@@ -15,12 +15,19 @@ const backendTransactions = [
     timestamp: "2026-10-22T14:30:00Z",
   },
 ]
+const backendHoldings = [
+  { clientId: 47, ticker: "AAPL", quantity: 36 },
+  { clientId: 47, ticker: "MSFT", quantity: 12 },
+]
 
 class FakeHttpClient {
   requests = []
 
   get(url) {
     this.requests.push({ method: "GET", url })
+    if (url === "/api/v1/holdings") return of(backendHoldings)
+    if (url.includes("/api/v1/holdings/quantity")) return of({ quantity: 36 })
+    if (url.includes("/api/v1/holdings/AAPL")) return of(backendHoldings[0])
     return of(backendTransactions)
   }
 
@@ -113,6 +120,16 @@ try {
     http.requests.some((request) => request.url.includes("amount=1000")),
     true,
   )
+  store.loadHoldings()
+  assert.deepEqual(
+    store.holdings.map(({ symbol, quantity }) => ({ symbol, quantity })),
+    [
+      { symbol: "AAPL", quantity: 36 },
+      { symbol: "MSFT", quantity: 12 },
+    ],
+  )
+  assert.equal((await store.getHolding("AAPL").toPromise()).quantity, 36)
+  assert.equal((await store.getHoldingQuantity("AAPL").toPromise()).quantity, 36)
   store.login("reporter", "rpatel")
   assert.equal(store.name, "Rina Patel")
   assert.throws(
