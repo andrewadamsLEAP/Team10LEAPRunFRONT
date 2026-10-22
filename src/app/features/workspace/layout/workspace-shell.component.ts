@@ -7,7 +7,7 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from "@angular/router"
-import Store from "../../../core/state/portfolio.store"
+import Store, { ClientProfile } from "../../../core/state/portfolio.store"
 import Brand from "../../../shared/brand/brand.component"
 import { TokenStore } from "../../../core/auth/token-store.service"
 import { BASE_PATH } from "../../../core/api/auth"
@@ -21,8 +21,8 @@ import { BASE_PATH } from "../../../core/api/auth"
       <div class="client-app"><header class="client-header"><app-brand/>
         <button class="menu-button" aria-label="Toggle navigation" (click)="menu = !menu">≡</button>
         <nav class="client-nav" [class.open]="menu">@for (page of clientPages; track page[0]) { <a [routerLink]="['/client', page[0]]" routerLinkActive="active" (click)="menu = false">{{ page[1] }}</a> }</nav>
-        <label class="header-search"><input [(ngModel)]="tickerQuery" aria-label="Search ticker or name" placeholder="Search ticker or name" autocomplete="off"><span aria-hidden="true">⌕</span><div class="header-search-results" role="listbox">@if (tickerQuery.trim()) { @for (instrument of tickerMatches; track instrument.ticker) { <a [routerLink]="['/client/ticker', instrument.ticker]" (click)="clearTickerSearch()"><strong>{{ instrument.ticker }}</strong><span>{{ instrument.displayName }}</span></a> } @empty { <span class="header-search-empty">No matching instruments</span> } }</div></label>
-        <div class="client-account"><span class="user-avatar">{{ store.name.slice(0,2).toUpperCase() }}</span><span>{{ store.name }}</span><button (click)="logout()">Sign out</button></div>
+        <label class="header-search"><input [(ngModel)]="tickerQuery" aria-label="Search ticker or name" placeholder="Search ticker or name" autocomplete="off"><span aria-hidden="true">⌕</span><div class="header-search-results" role="listbox">@if (tickerQuery.trim()) { @for (instrument of tickerMatches; track instrument.ticker) { <a [routerLink]="['/client/ticker', instrument.ticker]" (click)="clearTickerSearch()"><strong>{{ instrument.ticker }}</strong><span>{{ instrument.displayName || '—' }}</span></a> } @empty { <span class="header-search-empty">No matching instruments</span> } }</div></label>
+        <div class="client-account"><a class="user-avatar" routerLink="/client/account" aria-label="Open account">{{ store.name.slice(0,2).toUpperCase() }}</a><a routerLink="/client/account">{{ store.name }}</a><button (click)="logout()">Sign out</button></div>
       </header><router-outlet/></div>
     } @else {
       <div class="employee-shell"><aside class="employee-sidebar"><app-brand/><div class="workspace-label"><span>Workspace</span><b>{{ store.session()?.role }}</b></div>
@@ -46,6 +46,7 @@ export default class Shell {
     ["orders", "Orders"],
     ["transactions", "Transactions"],
     ["analytics", "Analytics"],
+    ["account", "Account"],
   ]
   employeePages = [
     ["orders", "All orders"],
@@ -55,7 +56,17 @@ export default class Shell {
   ]
   tickerQuery = ""
   constructor() {
-    if (this.store.session()?.role === "client") this.store.loadInstruments()
+    if (this.store.session()?.role === "client") {
+      this.store.loadInstruments()
+      if (!this.store.clientProfile()) {
+        this.http
+          .get<ClientProfile>(`${this.apiBasePath}/v1/clients/profile`)
+          .subscribe({
+            next: (profile) => this.store.setClientProfile(profile),
+            error: () => undefined,
+          })
+      }
+    }
   }
   get tickerMatches() {
     const query = this.tickerQuery.trim().toLowerCase()
@@ -89,6 +100,7 @@ export default class Shell {
 
   private finalizeLogout() {
     this.tokenStore.clear()
+    this.store.clearClientProfile()
     this.store.session.set(null)
     void this.router.navigate(["/login"])
   }
