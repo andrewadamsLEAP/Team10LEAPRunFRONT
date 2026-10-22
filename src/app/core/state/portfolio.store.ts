@@ -20,6 +20,14 @@ type Session = {
   role: Role
   username: string
 }
+export type ClientProfile = {
+  clientId: number
+  email: string | null
+  username: string | null
+  firstName: string | null
+  lastName: string | null
+  cashAmount: number
+}
 export const timestamp = () =>
   new Intl.DateTimeFormat("en-US", {
     month: "long",
@@ -34,6 +42,7 @@ export const timestamp = () =>
 export default class Store {
   readonly assets = assets
   session = signal<Session | null>(null)
+  clientProfile = signal<ClientProfile | null>(null)
   clients = signal(structuredClone(initialClients))
   reporters = signal(structuredClone(initialReporters))
   orders = signal(structuredClone(initialOrders))
@@ -51,6 +60,12 @@ export default class Store {
   ])
   get account() {
     return this.clients().find((a) => a.username === this.session()?.username)
+  }
+  setClientProfile(profile: ClientProfile) {
+    this.clientProfile.set(profile)
+  }
+  clearClientProfile() {
+    this.clientProfile.set(null)
   }
   get name() {
     const session = this.session()
@@ -88,6 +103,7 @@ export default class Store {
   }
   login(role: Role, rawUsername: string, email = "", fullName = "") {
     const username = rawUsername.trim().toLowerCase()
+    this.clearClientProfile()
     const list = role === "client" ? this.clients() : this.reporters()
     /*
     if (
@@ -114,6 +130,29 @@ export default class Store {
       ])
     }
     this.session.set({ role, username })
+  }
+  updateProfile(input: { username: string; firstName: string; lastName: string }) {
+    const current = this.session()
+    if (!current || current.role !== "client") throw new Error("Client access required.")
+    const username = input.username.trim().toLowerCase()
+    if (!username) throw new Error("Username is required.")
+    if (this.clients().some((account) =>
+      account.username === username && account.username !== current.username
+    )) {
+      throw new Error("Username already exists.")
+    }
+    this.clients.update((items) =>
+      items.map((account) =>
+        account.username !== current.username
+          ? account
+          : {
+              ...account,
+              username,
+              fullName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+            },
+      ),
+    )
+    this.session.set({ ...current, username })
   }
   private updateCash(delta: number) {
     this.clients.update((items) =>

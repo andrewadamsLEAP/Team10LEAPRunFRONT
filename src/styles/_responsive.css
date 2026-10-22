@@ -22,6 +22,10 @@
   .header-search { width: auto; flex: 1; margin-left: 0; }
   .client-account > span { display: none; }
   .page-wrap { padding-inline: 14px; }
+  .profile-heading, .profile-form { padding-inline: 18px; }
+  .profile-readonly { padding-inline: 18px; grid-template-columns: 1fr; }
+  .profile-fields { grid-template-columns: 1fr; gap: 15px; }
+  .profile-fields label:first-child { grid-column: auto; }
   .portfolio-hero { grid-template-columns: 1fr; gap: 8px; }
   .portfolio-hero .price-chart { height: 120px; }
   .portfolio-copy .period-tabs { margin-top: 15px; }
