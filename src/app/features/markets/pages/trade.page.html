@@ -1,0 +1,46 @@
+@if (asset; as a) {
+  <div class="narrow-page">
+    <button class="back-button" (click)="back()">‹ Back</button>
+    <section class="surface trade-card">
+      <div class="trade-card-title">
+        <i class="large-symbol">{{ a.symbol[0] }}</i>
+        <div>
+          <span>{{ review ? 'Review order' : 'Place an order' }}</span>
+          <h1>{{ a.symbol }}</h1>
+          <p>{{ displayName(a.symbol, a.name) }}</p>
+        </div>
+      </div>
+      @if (!review) {
+        <div class="side-switch">
+          <button [class.active]="side === 'Buy'" class="buy" (click)="side = 'Buy'">Buy</button>
+          <button [class.active]="side === 'Sell'" class="sell" (click)="side = 'Sell'">Sell</button>
+        </div>
+      }
+      <label class="form-field">
+        <span>Order type</span>
+        <div class="quantity-input static-field">Market</div>
+      </label>
+      <label class="form-field">
+        <span>Quantity</span>
+        <div class="quantity-input">
+          <input type="number" min="1" step="1" [(ngModel)]="quantity" [readonly]="review" aria-label="Order quantity">
+        </div>
+      </label>
+      <div class="order-details">
+        <div><span>Side</span><strong>{{ side }}</strong></div>
+        <div><span>Market price</span><strong>{{ marketPrice() === null ? 'Unavailable' : (marketPrice() | currency:'USD':'symbol':'1.2-4') }}</strong></div>
+        <div><span>Commission</span><strong>{{ 0 | currency:'USD' }}</strong></div>
+        <div><span>Buying power</span><strong>{{ cashAmount() === null ? 'Loading...' : (cashAmount() | currency:'USD') }}</strong></div>
+        <div><span>Estimated total</span><strong>{{ estimatedTotal() === null ? 'Unavailable' : (estimatedTotal() | currency:'USD') }}</strong></div>
+      </div>
+      @if (error()) {
+        <div class="form-error" role="alert">{{ error() }}</div>
+      }
+      <button class="primary-button full-button" [disabled]="loading()" (click)="review ? confirm() : check()">
+        {{ loading() ? 'Submitting...' : (review ? 'Confirm ' + side.toLowerCase() : 'Review order') }}
+      </button>
+    </section>
+  </div>
+} @else {
+  <p class="empty-state">Asset not found.</p>
+}

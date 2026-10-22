@@ -1,0 +1,100 @@
+.narrow-page {
+  width: min(560px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 27px 0 50px;
+}
+
+.trade-card {
+  padding: 25px;
+}
+
+.trade-card-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 20px;
+}
+
+.trade-card-title h1 {
+  margin: 2px 0 0;
+  font: 700 18px "Manrope";
+}
+
+.side-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-bottom: 18px;
+  padding: 4px;
+  border-radius: 7px;
+  background: #eff3f1;
+}
+
+.side-switch button {
+  height: 34px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #77847d;
+  font-size: 10px;
+}
+
+.side-switch button.active.buy {
+  background: white;
+  color: var(--green-dark);
+  box-shadow: 0 1px 5px #173b2b15;
+}
+
+.side-switch button.active.sell {
+  background: white;
+  color: var(--red);
+  box-shadow: 0 1px 5px #173b2b15;
+}
+
+.form-field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.quantity-input {
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+}
+
+.quantity-input input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  outline: 0;
+}
+
+.quantity-input.static-field {
+  color: var(--ink);
+  font-weight: 600;
+  background: #f4f7f5;
+}
+
+.order-details {
+  padding: 14px 0;
+  border-block: 1px solid var(--line);
+  margin-bottom: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-details div {
+  display: flex;
+  justify-content: space-between;
+  color: #77847d;
+  font-size: 10px;
+}
+
+.order-details strong {
+  color: var(--ink);
+}
+
+.full-button {
+  width: 100%;
+}

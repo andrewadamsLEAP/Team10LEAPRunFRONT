@@ -4,8 +4,10 @@ import { HttpClient } from "@angular/common/http"
 import { RouterLink } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
 import { BASE_PATH } from "../../../core/api/auth"
+import { ClientOrderRecord, OrdersApiService } from "../../../core/api/orders-api.service"
+import { TokenStore } from "../../../core/auth/token-store.service"
 
-type AdminOrderRecord = {
+type AdminOrderRecord = ClientOrderRecord & {
   order_id?: string | number
   orderId?: string | number
   clientId?: string | number
@@ -38,25 +40,24 @@ type OrderRow = {
   selector: "app-orders-page",
   standalone: true,
   imports: [CurrencyPipe, DecimalPipe, RouterLink],
-  template: `
-    <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">{{ client ? 'Your account' : 'All-client reporting' }}</span><h1>Orders</h1><p>{{ client ? 'Manage your portfolio activity in USD.' : 'Review activity across client accounts.' }}</p></div>@if (client) { <div class="cash-badge"><span>Buying power</span><strong>{{ store.cash | currency:'USD' }}</strong></div> }</div>
-      <section class="surface data-surface"><div class="data-table order-table" [class.with-client]="!client"><div class="data-row data-head"><span>Order ID</span>@if (!client) { <span>Client</span> }<span>Ticker</span><span>Side</span><span>Status</span><span>Price</span><span>Quantity</span><span>Date &amp; time</span></div>
-        @if (employee && loading()) { <p class="empty-state" role="status">Loading orders…</p> }
-        @else if (employee && loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
-        @else { @for (o of orders; track o.id) { <div class="data-row"><strong>{{ o.id }}</strong>@if (!client) { <span>{{ o.client }}</span> }<a [routerLink]="client ? ['/client/ticker', o.ticker] : null">{{ o.ticker }}</a><span [class]="'side-tag ' + o.type.toLowerCase()">{{ o.type }}</span><span [class]="'status ' + o.status.toLowerCase()">{{ o.status }}</span><span>{{ o.price | currency:'USD':'symbol':'1.2-4' }}</span><span>{{ o.quantity | number:'1.0-6' }}</span><span>{{ formatOrderDate(o.date) }}</span></div> } @empty { <p class="empty-state">No orders yet.</p> } }
-      </div></section>
-    </div>`,
+  templateUrl: "./orders.page.html",
+  styleUrl: "./orders.page.scss",
 })
 export default class OrdersPage implements OnInit {
   store = inject(Store)
   http = inject(HttpClient)
   apiBasePath = inject(BASE_PATH)
   adminOrders = signal<OrderRow[]>([])
+  clientOrders = signal<OrderRow[]>([])
   loading = signal(false)
   loadError = signal("")
+  tokenStore = inject(TokenStore)
 
   ngOnInit() {
-    if (!this.employee) return
+    if (!this.employee) {
+      this.loadClientOrders()
+      return
+    }
 
     this.loading.set(true)
     this.http
@@ -88,6 +89,47 @@ export default class OrdersPage implements OnInit {
       })
   }
 
+  private readonly ordersApi = inject(OrdersApiService)
+
+  private loadClientOrders() {
+    const clientId = Number(this.tokenStore.currentUser()?.sub)
+    if (!Number.isSafeInteger(clientId) || clientId <= 0) {
+      this.loadError.set("Unable to identify the logged-in client.")
+      return
+    }
+
+    this.loading.set(true)
+    this.ordersApi.getAllClientOrders(clientId).subscribe({
+      next: (records) => {
+        this.clientOrders.set(
+          records
+            .map((record) => this.toOrderRow(record))
+            .sort((left, right) => right.date.localeCompare(left.date)),
+        )
+        this.loading.set(false)
+      },
+      error: (error: { error?: { message?: string }; message?: string }) => {
+        this.loadError.set(
+          error.error?.message || error.message || "Unable to load your orders from the backend.",
+        )
+        this.loading.set(false)
+      },
+    })
+  }
+
+  private toOrderRow(record: ClientOrderRecord): OrderRow {
+    return {
+      id: String(record.orderId ?? record.order_id ?? "—"),
+      client: "",
+      ticker: record.ticker ?? "—",
+      type: record.orderType ?? record.order_type ?? "—",
+      status: record.status ?? record.orderStatus ?? record.order_status ?? "—",
+      quantity: Number(record.quantity ?? 0),
+      price: Number(record.price ?? 0),
+      date: record.createdAt ?? record.orderDate ?? record.order_date ?? "—",
+    }
+  }
+
   get client() {
     return this.store.session()?.role === "client"
   }
@@ -100,7 +142,7 @@ export default class OrdersPage implements OnInit {
   }
   get orders() {
     if (this.employee) return this.adminOrders()
-    return this.client ? this.store.clientOrders : this.store.orders()
+    return this.client ? this.clientOrders() : this.store.orders()
   }
 
   formatOrderDate(value: string) {

@@ -1,29 +1,30 @@
-import { Component, inject } from "@angular/core"
+import { Component, DestroyRef, inject, OnInit, signal } from "@angular/core"
 import { CurrencyPipe } from "@angular/common"
 import { FormsModule } from "@angular/forms"
 import { ActivatedRoute, Router } from "@angular/router"
 import { toSignal } from "@angular/core/rxjs-interop"
 import Store from "../../../core/state/portfolio.store"
 import { Side } from "../../../core/models/data"
+import { OrdersApiService } from "../../../core/api/orders-api.service"
+import { ClientProfileApiService } from "../../../core/api/client-profile-api.service"
+import { MarketDataService } from "../../../core/api/market-data.service"
+import { Instrument } from "../../../core/models/data"
+import { interval, startWith, switchMap } from "rxjs"
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop"
 
 @Component({
   selector: "app-trade-page",
   standalone: true,
   imports: [CurrencyPipe, FormsModule],
-  template: `
-    @if (asset; as a) {
-      <div class="narrow-page"><button class="back-button" (click)="back()">‹ Back</button><section class="surface trade-card"><div class="trade-card-title"><i class="large-symbol">{{ a.symbol[0] }}</i><div><span>{{ review ? 'Review order' : 'Place an order' }}</span><h1>{{ a.symbol }}</h1><p>{{ displayName(a.symbol, a.name) }}</p></div></div>
-        @if (!review) { <div class="side-switch"><button [class.active]="side === 'Buy'" class="buy" (click)="side = 'Buy'">Buy</button><button [class.active]="side === 'Sell'" class="sell" (click)="side = 'Sell'">Sell</button></div> }
-        <label class="form-field"><span>Order type</span><div class="quantity-input static-field">Market</div></label>
-        <label class="form-field"><span>Quantity</span><div class="quantity-input"><input type="number" min="0" [step]="a.kind === 'Stock' ? 1 : 0.000001" [(ngModel)]="quantity" [readonly]="review" aria-label="Order quantity"></div></label>
-        <div class="order-details"><div><span>Side</span><strong>{{ side }}</strong></div><div><span>Market price</span><strong>{{ a.price | currency:'USD':'symbol':'1.2-4' }}</strong></div><div><span>Commission</span><strong>{{ 0 | currency:'USD' }}</strong></div><div><span>Buying power</span><strong>{{ store.cash | currency:'USD' }}</strong></div><div><span>Estimated total</span><strong>{{ quantity * a.price | currency:'USD' }}</strong></div></div>
-        @if (error) { <div class="form-error" role="alert">{{ error }}</div> }
-        <button class="primary-button full-button" (click)="review ? confirm() : check()">{{ review ? 'Confirm ' + side.toLowerCase() : 'Review order' }}</button>
-      </section></div>
-    } @else { <p class="empty-state">Asset not found.</p> }`,
+  templateUrl: "./trade.page.html",
+  styleUrl: "./trade.page.scss",
 })
-export default class TradePage {
+export default class TradePage implements OnInit {
   store = inject(Store)
+  ordersApi = inject(OrdersApiService)
+  clientProfileApi = inject(ClientProfileApiService)
+  marketDataApi = inject(MarketDataService)
+  destroyRef = inject(DestroyRef)
   router = inject(Router)
   route = inject(ActivatedRoute)
   params = toSignal(this.route.paramMap)
@@ -45,39 +46,140 @@ export default class TradePage {
     this.route.snapshot.queryParamMap.get("side") === "Sell" ? "Sell" : "Buy"
   quantity = 1
   review = false
-  error = ""
+  loading = signal(false)
+  profileLoading = signal(true)
+  cashAmount = signal<number | null>(null)
+  liveInstrument = signal<Instrument | null>(null)
+  error = signal("")
+  marketPrice() {
+    const instrument = this.liveInstrument()
+    return this.side === "Buy"
+      ? instrument?.askPrice ?? null
+      : instrument?.bidPrice ?? null
+  }
+  estimatedTotal() {
+    const price = this.marketPrice()
+    return price === null ? null : price * this.quantity
+  }
+  ngOnInit() {
+    const ticker = this.symbol?.replaceAll("/", "-")
+    if (ticker) {
+      interval(10000)
+        .pipe(
+          startWith(0),
+          switchMap(() => this.marketDataApi.getInstrument(ticker)),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe({
+          next: (instrument) => this.liveInstrument.set(instrument),
+          error: () => this.error.set("Unable to load the current market price."),
+        })
+    }
+
+    interval(10000)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.clientProfileApi.getProfile()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+      next: (profile) => {
+        const amount = profile.cashAmount ?? profile.cash_amount ?? profile.cash
+        const parsedAmount = Number(amount)
+        this.cashAmount.set(Number.isFinite(parsedAmount) ? parsedAmount : null)
+        this.profileLoading.set(false)
+        if (this.cashAmount() === null) this.error.set("Buying power is unavailable.")
+      },
+      error: () => {
+        this.profileLoading.set(false)
+        this.error.set("Unable to load your buying power.")
+      },
+      })
+  }
   back() {
     if (this.review) this.review = false
     else void this.router.navigate(["/client/ticker", this.symbol])
   }
   check() {
-    this.error = ""
+    this.error.set("")
+    if (this.profileLoading() || this.cashAmount() === null) {
+      this.error.set("Buying power is still loading. Please try again.")
+      return
+    }
+    if (this.marketPrice() === null) {
+      this.error.set("Current market price is unavailable. Please try again.")
+      return
+    }
     if (
       !Number.isFinite(this.quantity) ||
       this.quantity <= 0 ||
-      (this.asset?.kind === "Stock" && !Number.isInteger(this.quantity))
+      !Number.isInteger(this.quantity)
     )
-      this.error = "Enter a valid quantity. Stocks require whole shares."
+      this.error.set("Enter a valid whole-number quantity.")
     else if (
       this.side === "Buy" &&
-      this.quantity * this.asset!.price > this.store.cash
+      this.quantity * this.marketPrice()! > this.cashAmount()!
     )
-      this.error = "Insufficient buying power."
+      this.error.set("Insufficient buying power.")
     else if (
       this.side === "Sell" &&
       this.quantity >
         (this.store.holdings.find((p) => p.symbol === this.symbol)?.quantity ??
           0)
     )
-      this.error = "Insufficient holdings."
+      this.error.set("Insufficient holdings.")
     else this.review = true
   }
   confirm() {
-    try {
-      this.store.trade(this.symbol!, this.side, this.quantity)
-      void this.router.navigate(["/client/orders"])
-    } catch (error) {
-      this.error = (error as Error).message
+    if (this.loading() || !this.symbol) return
+
+    this.error.set("")
+    this.loading.set(true)
+    const ticker = this.symbol.replaceAll("/", "-")
+    const request = {
+      ticker,
+      quantity: this.quantity,
     }
+    const orderRequest =
+      this.side === "Buy"
+        ? this.ordersApi.placeBuyOrder(request)
+        : this.ordersApi.placeSellOrder(request)
+
+    orderRequest.subscribe({
+      next: () => {
+        this.loading.set(false)
+        void this.router.navigate(["/client/orders"])
+      },
+      error: (error: {
+        error?: {
+          message?: string
+          detail?: string
+          error?: string
+          errors?: Array<{ defaultMessage?: string; message?: string }>
+        } | string
+        status?: number
+        message?: string
+      }) => {
+        this.loading.set(false)
+        const response = error.error
+        const validationMessage =
+          typeof response === "object" && response?.errors?.[0]
+            ? response.errors[0].defaultMessage || response.errors[0].message
+            : undefined
+        this.error.set(
+          (typeof response === "string" ? response : undefined) ||
+          (typeof response === "object" ? response?.message : undefined) ||
+          (typeof response === "object" ? response?.detail : undefined) ||
+          (typeof response === "object" ? response?.error : undefined) ||
+          validationMessage ||
+          (error.status === 400
+            ? `The backend rejected this ${this.side.toLowerCase()} order for ${ticker} (${this.quantity}). Check market data, market hours, cash, and holdings.`
+            : error.status === 0
+              ? "The order request timed out. It may already be pending on the server. Check your orders before submitting again."
+            : error.message) ||
+            `Unable to place ${this.side.toLowerCase()} order for ${ticker} (${this.quantity}).`,
+          )
+      },
+    })
   }
 }
