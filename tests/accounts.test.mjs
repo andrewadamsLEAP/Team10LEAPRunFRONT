@@ -19,12 +19,28 @@ const backendHoldings = [
   { clientId: 47, ticker: "AAPL", quantity: 36 },
   { clientId: 47, ticker: "MSFT", quantity: 12 },
 ]
+const backendMarketPrices = [
+  {
+    ticker: "AAPL",
+    ask_price: 250.25,
+    ask_size: 100,
+    ask_exchange: "Q",
+    bid_price: 250.1,
+    bid_size: 100,
+    bid_exchange: "Q",
+    tape: "C",
+    quote_timestamp: "2026-10-22T14:30:00Z",
+    recorded_at: "2026-10-22T14:30:02Z",
+    asset_type: "STOCK",
+  },
+]
 
 class FakeHttpClient {
   requests = []
 
   get(url) {
     this.requests.push({ method: "GET", url })
+    if (url === "/api/v1/trading/market-data/prices") return of(backendMarketPrices)
     if (url === "/api/v1/holdings") return of(backendHoldings)
     if (url.includes("/api/v1/holdings/quantity")) return of({ quantity: 36 })
     if (url.includes("/api/v1/holdings/AAPL")) return of(backendHoldings[0])
@@ -130,6 +146,8 @@ try {
   )
   assert.equal((await store.getHolding("AAPL").toPromise()).quantity, 36)
   assert.equal((await store.getHoldingQuantity("AAPL").toPromise()).quantity, 36)
+  store.loadMarketData()
+  assert.equal(store.assets.find((asset) => asset.symbol === "AAPL").price, 250.25)
   store.login("reporter", "rpatel")
   assert.equal(store.name, "Rina Patel")
   assert.throws(

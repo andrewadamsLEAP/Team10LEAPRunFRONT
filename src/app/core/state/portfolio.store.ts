@@ -1,8 +1,9 @@
 import { HttpClient } from "@angular/common/http"
 import { Injectable, signal } from "@angular/core"
-import { map, tap } from "rxjs"
+import { EMPTY, Subscription, interval, map, startWith, switchMap, tap, catchError } from "rxjs"
 import {
   Account,
+  Asset,
   Role,
   Side,
   Transaction,
@@ -38,6 +39,26 @@ export type Holding = {
 export type QuantityResponse = {
   quantity: number
 }
+export type MarketPrice = {
+  ticker: string
+  ask_price: number | null
+  ask_size: number | null
+  ask_exchange: string | null
+  bid_price: number | null
+  bid_size: number | null
+  bid_exchange: string | null
+  tape: string | null
+  quote_timestamp: string | null
+  recorded_at: string
+  asset_type?: "STOCK" | "CRYPTO" | "FOREX"
+}
+export type RefreshStatus = {
+  lastStartedAt: string | null
+  lastCompletedAt: string | null
+  lastFailure: string | null
+  successfulTickerCount: number
+  failedTickerCount: number
+}
 export const timestamp = () =>
   new Intl.DateTimeFormat("en-US", {
     month: "long",
@@ -51,7 +72,11 @@ export const timestamp = () =>
 @Injectable({ providedIn: "root" })
 export default class Store {
   constructor(private readonly http: HttpClient) {}
-  readonly assets = assets
+  private marketPolling?: Subscription
+  private readonly assetsState = signal(structuredClone(assets))
+  get assets() {
+    return this.assetsState()
+  }
   session = signal<Session | null>(null)
   clients = signal(structuredClone(initialClients))
   reporters = signal(structuredClone(initialReporters))
@@ -111,6 +136,62 @@ export default class Store {
         p.quantity * this.assets.find((a) => a.symbol === p.symbol)!.price,
       0,
     )
+  }
+  loadMarketData() {
+    this.http
+      .get<MarketPrice[]>("/api/v1/trading/market-data/prices")
+      .subscribe((records) => this.applyMarketPrices(records))
+  }
+  startMarketDataPolling() {
+    if (this.marketPolling) return
+    this.marketPolling = interval(5_000)
+      .pipe(
+        startWith(0),
+        switchMap(() =>
+          this.http
+            .get<MarketPrice[]>("/api/v1/trading/market-data/prices")
+            .pipe(catchError(() => EMPTY)),
+        ),
+      )
+      .subscribe((records) => this.applyMarketPrices(records))
+  }
+  getLatestPrice(ticker: string) {
+    return this.http.get<MarketPrice[]>(
+      `/api/v1/trading/market-data/prices/${encodeURIComponent(this.backendTicker(ticker))}`,
+    )
+  }
+  getPriceHistory(ticker: string, from?: string, to?: string) {
+    const url = `/api/v1/trading/market-data/prices/${encodeURIComponent(this.backendTicker(ticker))}/history`
+    const params = from && to
+      ? `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+      : ""
+    return this.http.get<MarketPrice[]>(`${url}${params}`)
+  }
+  getMarketTickers() {
+    return this.http.get<string[]>("/api/v1/trading/market-data/tickers")
+  }
+  getRefreshStatus() {
+    return this.http.get<RefreshStatus>("/api/v1/trading/market-data/refresh/status")
+  }
+  refreshMarketData() {
+    return this.http
+      .get<MarketPrice[]>("/api/v1/trading/market-data/refresh")
+      .pipe(tap((records) => this.applyMarketPrices(records)))
+  }
+  private applyMarketPrices(records: MarketPrice[]) {
+    const prices = new Map(records.map((record) => [this.displayTicker(record.ticker), record]))
+    this.assetsState.update((current) => current.map((asset) => {
+      const quote = prices.get(asset.symbol)
+      if (!quote) return asset
+      const price = quote.ask_price ?? quote.bid_price
+      return price == null ? asset : { ...asset, price, volume: String(quote.ask_size ?? quote.bid_size ?? asset.volume) }
+    }))
+  }
+  private displayTicker(ticker: string) {
+    return ticker.replace("-", "/")
+  }
+  private backendTicker(ticker: string) {
+    return ticker.replace("/", "-")
   }
   loadHoldings() {
     this.http.get<Holding[]>("/api/v1/holdings").subscribe((records) => {

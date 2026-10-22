@@ -176,6 +176,7 @@ export default class Auth {
           this.store.loadHoldings()
           this.store.loadClientTransactions()
         }
+        this.store.startMarketDataPolling()
 
         // Navigate to user's dashboard
         void this.router.navigate([resolvedRole, resolvedRole === 'client' ? 'home' : 'orders'])
