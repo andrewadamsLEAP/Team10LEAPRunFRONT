@@ -1,4 +1,5 @@
 import { Component, inject, signal } from "@angular/core"
+import { DOCUMENT } from "@angular/common"
 import { HttpClient } from "@angular/common/http"
 // Import ReactiveFormsModule and form building tools
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms"
@@ -35,6 +36,7 @@ import { BASE_PATH } from "../../../core/api/auth"
         </div>
       </section>
       <section class="auth-form-panel">
+        <button class="theme-toggle auth-theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-pressed]="darkMode()" [attr.aria-label]="darkMode() ? 'Switch to light mode' : 'Switch to dark mode'"><span aria-hidden="true">{{ darkMode() ? '☀' : '☾' }}</span><span>{{ darkMode() ? 'Light' : 'Dark' }} mode</span></button>
         <div class="mobile-brand"><app-brand/></div>
         <form class="auth-card" [formGroup]="authForm" (ngSubmit)="submit()">
           <span class="eyebrow">{{ signup() ? 'Create your account' : 'Welcome back' }}</span>
@@ -75,12 +77,14 @@ export default class Auth {
   private readonly router = inject(Router)
   private readonly tokenStore = inject(TokenStore)
   private readonly store = inject(Store)
+  private readonly document = inject(DOCUMENT)
 
   roles: Role[] = ["client", "reporter", "admin"]
   selectedRole = signal<Role>("client")
   signup = signal(this.router.url === "/signup")
   loading = signal(false)
   error = signal("")
+  darkMode = signal(false)
 
   // Define the reactive form structure with initial validation rules
   authForm = this.fb.group({
@@ -92,7 +96,18 @@ export default class Auth {
   })
 
   constructor() {
+    this.setDarkMode(localStorage.getItem("veridian-theme") === "dark", false)
     this.updateModeValidators()
+  }
+
+  toggleTheme() {
+    this.setDarkMode(!this.darkMode())
+  }
+
+  private setDarkMode(enabled: boolean, persist = true) {
+    this.darkMode.set(enabled)
+    this.document.documentElement.dataset["theme"] = enabled ? "dark" : "light"
+    if (persist) localStorage.setItem("veridian-theme", enabled ? "dark" : "light")
   }
 
   // Dynamically swap password & email rules when toggling between sign-in and sign-up

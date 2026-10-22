@@ -1,0 +1,280 @@
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: #e4ece8;
+  background: #111a16;
+  --green: #39bf8e;
+  --green-dark: #61d0a4;
+  --green-soft: #203b30;
+  --red: #f07880;
+  --ink: #e4ece8;
+  --muted: #9aa9a1;
+  --line: #34443c;
+  --surface: #1b2822;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .client-app,
+:root[data-theme="dark"] .employee-shell {
+  color: var(--ink);
+  background: #111a16;
+}
+
+:root[data-theme="dark"] .client-header,
+:root[data-theme="dark"] .employee-sidebar,
+:root[data-theme="dark"] .employee-main > header,
+:root[data-theme="dark"] .surface,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .account-modal,
+:root[data-theme="dark"] .search-results,
+:root[data-theme="dark"] .search-results button,
+:root[data-theme="dark"] .quick-buttons button,
+:root[data-theme="dark"] .row-actions button,
+:root[data-theme="dark"] .menu-button {
+  color: var(--ink);
+  background-color: var(--surface);
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .client-header {
+  background: #17231def;
+}
+
+:root[data-theme="dark"] .employee-main,
+:root[data-theme="dark"] .page-wrap {
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .data-row,
+:root[data-theme="dark"] .ticker-row,
+:root[data-theme="dark"] .mini-list-row,
+:root[data-theme="dark"] .order-mini {
+  color: #bac7c0;
+  background-color: transparent;
+  border-color: #2b3a32;
+}
+
+:root[data-theme="dark"] .data-row strong,
+:root[data-theme="dark"] .data-row b,
+:root[data-theme="dark"] .ticker-name strong,
+:root[data-theme="dark"] .mini-list-row strong,
+:root[data-theme="dark"] .order-mini strong,
+:root[data-theme="dark"] .search-results button b,
+:root[data-theme="dark"] .stat-card strong {
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .data-row.data-head,
+:root[data-theme="dark"] .history-table .data-row.data-head,
+:root[data-theme="dark"] .transaction-table.employee-transactions .data-head {
+  color: #a2b1a9;
+  background: #202e27;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .surface,
+:root[data-theme="dark"] .history-table-card {
+  box-shadow: 0 4px 18px #00000022;
+}
+
+:root[data-theme="dark"] .client-nav a,
+:root[data-theme="dark"] .client-account,
+:root[data-theme="dark"] .employee-user,
+:root[data-theme="dark"] .employee-status,
+:root[data-theme="dark"] .back-button,
+:root[data-theme="dark"] .section-title > button,
+:root[data-theme="dark"] .row-actions button {
+  color: #b3c1b9;
+}
+
+:root[data-theme="dark"] .brand,
+:root[data-theme="dark"] .account-client-link,
+:root[data-theme="dark"] .client-nav a.active,
+:root[data-theme="dark"] .employee-sidebar nav a.active {
+  color: #73d8b1;
+}
+
+:root[data-theme="dark"] .workspace-label,
+:root[data-theme="dark"] .header-search,
+:root[data-theme="dark"] .fund-tabs,
+:root[data-theme="dark"] .side-switch,
+:root[data-theme="dark"] .quantity-input.static-field {
+  color: var(--ink);
+  background-color: #24352d;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .employee-sidebar nav a,
+:root[data-theme="dark"] .employee-sidebar nav a:hover,
+:root[data-theme="dark"] .search-results button:hover,
+:root[data-theme="dark"] .history-table .data-row:not(.data-head):hover,
+:root[data-theme="dark"] button.ticker-row:hover {
+  color: var(--ink);
+  background-color: #26372f;
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+  color: var(--ink);
+  background-color: #16221c;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: #899a91;
+}
+
+:root[data-theme="dark"] .history-count,
+:root[data-theme="dark"] .fund-tabs button.active,
+:root[data-theme="dark"] .quick-buttons button {
+  color: var(--ink);
+  background-color: #26372f;
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .history-status {
+  color: #9be6c6;
+  background: #234434;
+}
+
+:root[data-theme="dark"] .history-status.pending {
+  color: #f0d18c;
+  background: #493b20;
+}
+
+:root[data-theme="dark"] .history-status.cancelled,
+:root[data-theme="dark"] .history-status.rejected {
+  color: #ffadb2;
+  background: #48282b;
+}
+
+:root[data-theme="dark"] .cash-badge {
+  color: var(--ink);
+  background: #20382d;
+  border-color: #315844;
+}
+
+:root[data-theme="dark"] .ticker-name > i,
+:root[data-theme="dark"] .mini-list-row > i,
+:root[data-theme="dark"] .holding-name > i,
+:root[data-theme="dark"] .user-avatar {
+  color: #a6e9cc;
+  background: #264737;
+}
+
+:root[data-theme="dark"] .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: #203029;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: #526159;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+
+.theme-toggle > span:first-child {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.employee-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+@media (max-width: 780px) {
+  .client-header { gap: 10px; padding-inline: 14px; }
+  .theme-toggle { padding-inline: 8px; font-size: 9px; }
+  .employee-header-actions { gap: 8px; }
+}
+
+@media (max-width: 520px) {
+  .client-account { gap: 5px; }
+  .client-account .theme-toggle { width: 34px; padding: 0; }
+  .client-account .theme-toggle > span:last-child { display: none; }
+  .employee-header-actions .theme-toggle > span:last-child { display: none; }
+  .employee-header-actions .theme-toggle { width: 34px; padding: 0; }
+}
+
+.auth-form-panel { position: relative; transition: background-color .2s ease; }
+.auth-theme-toggle { position: absolute; top: 22px; right: 24px; z-index: 2; }
+
+:root[data-theme="dark"] .auth-form-panel {
+  color: var(--ink);
+  background: #111a16;
+}
+
+:root[data-theme="dark"] .auth-card h2,
+:root[data-theme="dark"] .auth-card label span,
+:root[data-theme="dark"] .auth-card .form-field > span {
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .auth-card input,
+:root[data-theme="dark"] .auth-card .form-field select {
+  color: var(--ink);
+  background: #1b2822;
+  border-color: #3b4c43;
+}
+
+:root[data-theme="dark"] .role-picker {
+  background: #202e27;
+}
+
+:root[data-theme="dark"] .role-picker button {
+  color: #aebdb5;
+}
+
+:root[data-theme="dark"] .role-picker button.active {
+  color: #8fe0bd;
+  background: #30443a;
+  box-shadow: 0 1px 5px #0005;
+}
+
+:root[data-theme="dark"] .auth-switch {
+  color: #a1b0a8;
+}
+
+:root[data-theme="dark"] .form-error {
+  color: #ffb4b9;
+  background: #48282b;
+}
+
+:root[data-theme="dark"] .mobile-brand .brand {
+  color: #bcebd6;
+}
+
+@media (max-width: 780px) {
+  .auth-theme-toggle { top: 16px; right: 16px; }
+}
