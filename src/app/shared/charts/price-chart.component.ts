@@ -45,15 +45,15 @@ export default class Chart implements OnChanges, OnDestroy {
     this.historyRequest = this.marketData
       .getPriceHistory(
         this.ticker.replace("/", "-"),
-        from.toISOString(),
-        to.toISOString(),
+        from,
+        to,
       )
       .subscribe({
         next: (records) => {
           this.history = records
             .map((record) => ({
-              timestamp: record.recorded_at || record.quote_timestamp || "",
-              price: record.ask_price ?? record.bid_price,
+              timestamp: record.timestamp,
+              price: record.price,
             }))
             .filter((point): point is ChartPoint =>
               point.price != null && Number.isFinite(point.price),
