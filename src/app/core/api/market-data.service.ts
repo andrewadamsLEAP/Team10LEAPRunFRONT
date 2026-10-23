@@ -33,6 +33,13 @@ export type MarketPriceHistory = {
   quote_timestamp: string | null
   recorded_at: string
 }
+export type LatestMarketPrice = {
+  ticker: string
+  ask_price: number | null
+  bid_price: number | null
+  quote_timestamp: string | null
+  recorded_at: string
+}
 
 @Injectable({ providedIn: "root" })
 export class MarketDataService {
@@ -70,10 +77,11 @@ export class MarketDataService {
 
   private tickerPath(ticker: string): string {
     return encodeURIComponent(ticker.trim().replaceAll("/", "-").toUpperCase())
+  }
 
-  getLatestPrice(ticker: string): Observable<MarketPriceHistory[]> {
-    return this.http.get<MarketPriceHistory[]>(
-      `${this.apiBasePath}/v1/trading/market-data/prices/${encodeURIComponent(ticker)}`,
+  getLatestPrice(ticker: string): Observable<LatestMarketPrice[]> {
+    return this.http.get<LatestMarketPrice[]>(
+      `${this.apiBasePath}/v1/trading/market-data/prices/${this.tickerPath(ticker)}`,
     )
   }
 
