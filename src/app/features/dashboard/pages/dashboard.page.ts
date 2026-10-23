@@ -34,20 +34,24 @@ export default class DashboardPage {
   store = inject(Store)
   periods = ["1D", "1W", "1M", "1Y"]
   period = "1M"
+
   readonly trending = computed(() => this.store.instruments()
     .filter((instrument): instrument is Instrument & { changePercent: number } =>
       instrument.changePercent !== null && Number.isFinite(instrument.changePercent))
     .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent) || a.ticker.localeCompare(b.ticker))
     .slice(0, 10))
+
   constructor() {
     if (!this.store.instrumentLoading()) this.store.loadInstruments()
   }
+
   currentPrice(instrument: Instrument) {
     if (instrument.bidPrice !== null && instrument.askPrice !== null) {
       return (instrument.bidPrice + instrument.askPrice) / 2
     }
     return instrument.bidPrice ?? instrument.askPrice
   }
+
   positionValue(symbol: string, quantity: number) {
     return this.store.assets.find((a) => a.symbol === symbol)!.price * quantity
   }
