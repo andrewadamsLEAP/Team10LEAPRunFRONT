@@ -167,7 +167,12 @@ export default class Auth {
         this.loading.set(false)
         
         // Saving jwt tokens in token store
-        this.tokenStore.setTokens(res.access_token, res.refresh_token)
+        this.tokenStore.setTokens(
+          res.access_token,
+          res.refresh_token,
+          res.access_token_expires_at,
+          res.refresh_token_expires_at,
+        )
 
         // Sync session in portfolio.store.ts
         const resolvedRole = this.tokenStore.userRole()
