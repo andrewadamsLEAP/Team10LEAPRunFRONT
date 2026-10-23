@@ -15,6 +15,9 @@
   .auth-form-panel { min-height: 100vh; padding: 24px; display: flex; flex-direction: column; justify-content: center; }
   .mobile-brand { display: block; width: min(400px, 100%); margin: 0 auto 35px; }
   .client-header { padding: 0 14px; gap: 9px; }
+  .token-countdowns { gap: 6px; padding: 5px 6px; }
+  .token-countdowns > span { min-width: 43px; }
+  .token-countdowns strong { font-size: 8px; }
   .menu-button { display: grid; }
   .client-nav { position: absolute; top: 64px; left: 10px; width: 205px; height: auto; padding: 7px; border: 1px solid var(--line); border-radius: 7px; background: white; box-shadow: 0 15px 35px #173b2b25; display: none; flex-direction: column; align-items: stretch; }
   .client-nav.open { display: flex; }
@@ -47,6 +50,13 @@
 
 @media (max-width: 520px) {
   .client-header .brand strong { display: none; }
+  .client-header { gap: 6px; }
+  .employee-header-tools { gap: 6px; }
+  .employee-status { display: none; }
+  .token-countdowns { gap: 5px; padding: 4px 5px; }
+  .token-countdowns > span { min-width: 38px; }
+  .token-countdowns small { font-size: 6px; }
+  .token-countdowns strong { font-size: 7px; }
   .client-account .user-avatar { display: none; }
   .page-intro { align-items: center; }
   .page-intro h1 { font-size: 20px; }

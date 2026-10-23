@@ -28,8 +28,8 @@ import { BASE_PATH } from "../../../core/api/auth"
           <div><span>Market pulse</span><b>USD markets</b></div>
           <div class="pulse-stats">
             <span>S&amp;P 500 <em>+0.82%</em></span>
-            <span>BTC/USD <em>+2.64%</em></span>
-            <span>EUR/USD <em>+0.28%</em></span>
+            <span>BTC-USD <em>+2.64%</em></span>
+            <span>EUR-USD <em>+0.28%</em></span>
           </div>
           <app-chart/>
         </div>
@@ -167,7 +167,12 @@ export default class Auth {
         this.loading.set(false)
         
         // Saving jwt tokens in token store
-        this.tokenStore.setTokens(res.access_token, res.refresh_token)
+        this.tokenStore.setTokens(
+          res.access_token,
+          res.refresh_token,
+          res.access_token_expires_at,
+          res.refresh_token_expires_at,
+        )
 
         // Sync session in portfolio.store.ts
         const resolvedRole = this.tokenStore.userRole()
@@ -177,6 +182,7 @@ export default class Auth {
           this.store.loadHoldings()
           this.store.loadClientTransactions()
         }
+        this.store.startMarketDataPolling()
 
         // Navigate to user's dashboard
         void this.router.navigate([resolvedRole, resolvedRole === 'client' ? 'home' : 'orders'])

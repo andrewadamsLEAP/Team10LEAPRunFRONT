@@ -1,8 +1,10 @@
 import { HttpClient } from "@angular/common/http"
 import { inject, Injectable, signal } from "@angular/core"
 import { map, tap } from "rxjs"
+import { EMPTY, Subscription, catchError, interval, startWith, switchMap } from "rxjs"
 import {
   Account,
+  Asset,
   Role,
   Side,
   Transaction,
@@ -60,13 +62,20 @@ export const timestamp = () =>
 
 @Injectable({ providedIn: "root" })
 export default class Store {
-  constructor(private readonly http: HttpClient) {}
-  readonly assets = assets
+  constructor(
+    private readonly http: HttpClient,
+    private readonly marketDataService: MarketDataService,
+  ) {}
+  private marketPolling?: Subscription
+  private readonly assetsState = signal(structuredClone(assets))
+  private readonly priceFlashState = signal<Record<string, boolean>>({})
+  get assets() {
+    return this.assetsState()
+  }
   readonly instruments = signal<Instrument[]>([])
   readonly instrumentLoading = signal(false)
   readonly instrumentError = signal<string | null>(null)
   readonly selectedInstrument = signal<Instrument | null>(null)
-  private readonly marketDataService = inject(MarketDataService)
   session = signal<Session | null>(null)
   clientProfile = signal<ClientProfile | null>(null)
   clients = signal(structuredClone(initialClients))
@@ -78,7 +87,7 @@ export default class Store {
     { client: "jordanlee", symbol: "NVDA", quantity: 48, average: 118.24 },
     {
       client: "jordanlee",
-      symbol: "BTC/USD",
+      symbol: "BTC-USD",
       quantity: 0.124,
       average: 91842.1,
     },
@@ -140,6 +149,7 @@ export default class Store {
     this.marketDataService.getInstruments().subscribe({
       next: (instruments) => {
         this.instruments.set(instruments)
+        this.applyInstrumentPrices(instruments)
         this.instrumentLoading.set(false)
       },
       error: () => {
@@ -147,6 +157,48 @@ export default class Store {
         this.instrumentLoading.set(false)
       },
     })
+  }
+  startMarketDataPolling() {
+    if (this.marketPolling) return
+    this.marketPolling = interval(5_000)
+      .pipe(
+        startWith(0),
+        switchMap(() =>
+          this.marketDataService
+            .getInstruments()
+            .pipe(catchError(() => EMPTY)),
+        ),
+      )
+      .subscribe((instruments) => {
+        this.instruments.set(instruments)
+        this.applyInstrumentPrices(instruments)
+      })
+  }
+  priceChanged(symbol: string) {
+    return this.priceFlashState()[symbol] ?? false
+  }
+  private applyInstrumentPrices(instruments: Instrument[]) {
+    const nextPrices = new Map(
+      instruments.map((instrument) => [
+        instrument.ticker.replace("-", "/"),
+        instrument.askPrice ?? instrument.bidPrice,
+      ]),
+    )
+    const currentPrices = new Map(this.assetsState().map((asset) => [asset.symbol, asset.price]))
+    const changed: Record<string, boolean> = {}
+    for (const [symbol, price] of nextPrices) {
+      if (price != null && currentPrices.has(symbol) && currentPrices.get(symbol) !== price) {
+        changed[symbol] = true
+        setTimeout(() => {
+          this.priceFlashState.update((flashes) => ({ ...flashes, [symbol]: false }))
+        }, 900)
+      }
+    }
+    this.priceFlashState.update((flashes) => ({ ...flashes, ...changed }))
+    this.assetsState.update((current) => current.map((asset) => {
+      const price = nextPrices.get(asset.symbol)
+      return price == null ? asset : { ...asset, price }
+    }))
   }
   loadInstrument(ticker: string) {
     this.instrumentLoading.set(true)

@@ -1,8 +1,8 @@
-import { Component, DestroyRef, inject, OnInit, signal } from "@angular/core"
+import { Component, DestroyRef, DestroyRef, inject, OnInit, signal } from "@angular/core"
 import { CurrencyPipe } from "@angular/common"
 import { FormsModule } from "@angular/forms"
 import { ActivatedRoute, Router } from "@angular/router"
-import { toSignal } from "@angular/core/rxjs-interop"
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop"
 import Store from "../../../core/state/portfolio.store"
 import { Side } from "../../../core/models/data"
 import { OrdersApiService } from "../../../core/api/orders-api.service"
@@ -28,19 +28,27 @@ export default class TradePage implements OnInit {
   router = inject(Router)
   route = inject(ActivatedRoute)
   params = toSignal(this.route.paramMap)
+  constructor() {
+    this.route.paramMap.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe((params) => {
+      this.review = false
+      this.error = ""
+      const symbol = params.get("symbol")
+      if (symbol) this.store.loadInstrument(symbol.trim().replaceAll("/", "-").toUpperCase())
+    })
+  }
   get symbol() {
-    return this.params()?.get("symbol")
+    return this.params()?.get("symbol")?.trim().replaceAll("/", "-").toUpperCase()
   }
   get asset() {
-    return this.store.assets.find((a) => a.symbol === this.symbol)
-  }
-  displayName(symbol: string, fallback: string) {
-    const normalizedSymbol = symbol.replace("/", "-").toLowerCase()
-    return (
-      this.store.instruments().find(
-        (instrument) => instrument.ticker.toLowerCase() === normalizedSymbol,
-      )?.displayName || fallback
-    )
+    const instrument = this.store.selectedInstrument()
+    if (!instrument || instrument.ticker !== this.symbol) return null
+    const price = instrument.bidPrice ?? instrument.askPrice
+    return {
+      symbol: instrument.ticker,
+      name: instrument.displayName || "—",
+      kind: instrument.assetType === "STOCK" ? "Stock" : instrument.assetType === "CRYPTO" ? "Crypto" : "Forex",
+      price: price !== null && Number.isFinite(price) && price > 0 ? price : null,
+    }
   }
   side: Side =
     this.route.snapshot.queryParamMap.get("side") === "Sell" ? "Sell" : "Buy"

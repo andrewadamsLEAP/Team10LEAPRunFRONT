@@ -11,6 +11,7 @@ const restoreSession = (store: Store, tokenStore: TokenStore) => {
       store.loadHoldings()
       store.loadClientTransactions()
     }
+    store.startMarketDataPolling()
   }
   return user && tokenStore.isAuthenticated()
 }
