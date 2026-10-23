@@ -26,6 +26,17 @@
 .header-search + .client-account { margin-left: 0; }
 .client-account > a:not(.user-avatar) { color: #526159; text-decoration: none; }
 .client-account > a:not(.user-avatar):hover { color: var(--green-dark); }
+.token-countdowns { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; background: #f8faf9; color: var(--ink); }
+.token-countdowns > span { display: flex; flex-direction: column; gap: 2px; min-width: 54px; }
+.token-countdowns small { color: var(--muted); font-size: 7px; line-height: 1; text-transform: uppercase; letter-spacing: .06em; }
+.token-countdowns strong { font: 600 9px "DM Sans", sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.employee-header-tools { display: flex; align-items: center; gap: 14px; }
+.session-expiry-backdrop { z-index: 100; }
+.session-expiry-modal { width: min(430px, 100%); padding: 28px; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 24px 70px #0d261d45; }
+.session-expiry-modal h2 { margin: 8px 0; color: var(--ink); font: 600 21px "Manrope", sans-serif; letter-spacing: -.03em; }
+.session-expiry-modal p { margin: 0 0 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.session-expiry-modal .primary-button { width: 100%; }
+.session-expiry-modal .session-refresh-error { margin-top: 14px; color: var(--red); }
 .profile-intro { max-width: 860px; margin-inline: auto; }
 .profile-surface { width: min(860px, 100%); margin: 0 auto; }
 .profile-heading { display: flex; align-items: center; gap: 15px; padding: 22px 28px; border-bottom: 1px solid var(--line); }

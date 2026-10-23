@@ -5,7 +5,7 @@ import { catchError, throwError } from "rxjs"
 import { TokenStore } from "./token-store.service"
 
 const isAuthRequest = (url: string) =>
-  /\/auth\/(login|signup|employee\/login)$/.test(url)
+  /\/auth\/(login|signup|refresh|employee\/login)$/.test(url)
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const tokenStore = inject(TokenStore)
