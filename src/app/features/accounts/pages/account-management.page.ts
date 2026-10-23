@@ -32,12 +32,19 @@ type ClientAdminRecord = {
   cashAmount: number
 }
 
+type AccountDraft = Account & {
+  firstName: string
+  lastName: string
+  password: string
+  role: string
+}
+
 @Component({
   selector: "app-account-management-page",
   standalone: true,
   imports: [CurrencyPipe, FormsModule, RouterLink],
   template: `
-    <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">Account management</span><h1>{{ reporters ? 'Reporter accounts' : 'Client accounts' }}</h1><p>{{ reporters ? 'Reporter account directory.' : 'Create, edit, and manage account access.' }}</p></div>@if (!reporters) { <button class="primary-button" (click)="create()">Add account</button> }</div>
+    <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">Account management</span><h1>{{ reporters ? 'Reporter accounts' : 'Client accounts' }}</h1><p>{{ reporters ? 'Reporter account directory.' : 'Create, edit, and manage account access.' }}</p></div>@if (reporters) { <button class="primary-button" (click)="create()">Add account</button> }</div>
       <section class="surface data-surface"><div class="data-table accounts-table admin" [class.reporter-accounts]="reporters"><div class="data-row data-head"><span>Username</span>@if (reporters) { <span>Full name</span><span>Email</span><span>Role</span> } @else { <span>First name</span><span>Last name</span><span>Cash</span><span>Actions</span> }</div>
         @if (loading()) { <p class="empty-state" role="status">Loading {{ reporters ? 'reporter' : 'client' }} accounts…</p> }
         @else if (loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
@@ -46,7 +53,16 @@ type ClientAdminRecord = {
     </div>
     @if (draft; as d) {
       <div class="modal-backdrop"><form class="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" (ngSubmit)="save()"><div class="modal-heading"><div><span class="eyebrow">Account details</span><h2 id="account-title">{{ editing ? 'Edit account' : 'Create account' }}</h2></div><button type="button" aria-label="Close dialog" (click)="draft = null">×</button></div>
-        <label><span>Username</span><input name="username" [(ngModel)]="d.username" required [readonly]="editing"></label><label><span>Full name</span><input name="fullName" [(ngModel)]="d.fullName"></label><label><span>Email</span><input name="email" type="email" [(ngModel)]="d.email" required></label>
+        <label><span>Username</span><input name="username" [(ngModel)]="d.username" required [readonly]="editing"></label>
+        @if (reporters) {
+          <label><span>First name</span><input name="firstName" [(ngModel)]="d.firstName" required></label>
+          <label><span>Last name</span><input name="lastName" [(ngModel)]="d.lastName" required></label>
+          <label><span>Password</span><input name="password" [(ngModel)]="d.password" type="password" autocomplete="new-password" required minlength="8"></label>
+          <label><span>Role</span><select name="role" [(ngModel)]="d.role" disabled><option value="reporter">Reporter</option></select></label>
+        } @else {
+          <label><span>Full name</span><input name="fullName" [(ngModel)]="d.fullName"></label>
+        }
+        <label><span>Email</span><input name="email" type="email" [(ngModel)]="d.email" required></label>
         @if (error) { <div class="form-error" role="alert">{{ error }}</div> }
         <div class="modal-actions"><button type="button" class="secondary-button" (click)="draft = null">Cancel</button><button class="primary-button">Save account</button></div>
       </form></div>
@@ -66,26 +82,7 @@ export default class AccountManagementPage implements OnInit {
     this.loading.set(true)
     this.loadError.set("")
     if (this.reporters) {
-      this.http
-        .get<ReporterApiResponse>(
-          `${this.apiBasePath}/v1/employees/admin/reporters`,
-          { timeout: 15000 },
-        )
-        .subscribe({
-          next: (response) => {
-            try {
-              const records = this.reporterRecords(response)
-              this.store.reporters.set(records.map((record, index) => this.toAccount(record, index)))
-            } catch (error) {
-              this.loadError.set((error as Error).message)
-            } finally {
-              this.loading.set(false)
-            }
-          },
-          error: (error: { error?: { message?: string }; message?: string }) => {
-            this.setLoadError(error, "reporter")
-          },
-        })
+      this.loadReporterAccounts()
       return
     }
 
@@ -108,6 +105,30 @@ export default class AccountManagementPage implements OnInit {
         },
         error: (error: { error?: { message?: string }; message?: string }) => {
           this.setLoadError(error, "client")
+        },
+      })
+  }
+
+  private loadReporterAccounts() {
+    this.loading.set(true)
+    this.http
+      .get<ReporterApiResponse>(
+        `${this.apiBasePath}/v1/employees/admin/reporters`,
+        { timeout: 15000 },
+      )
+      .subscribe({
+        next: (response) => {
+          try {
+            const records = this.reporterRecords(response)
+            this.store.reporters.set(records.map((record, index) => this.toAccount(record, index)))
+          } catch (error) {
+            this.loadError.set((error as Error).message)
+          } finally {
+            this.loading.set(false)
+          }
+        },
+        error: (error: { error?: { message?: string }; message?: string }) => {
+          this.setLoadError(error, "reporter")
         },
       })
   }
@@ -160,7 +181,7 @@ export default class AccountManagementPage implements OnInit {
   isReporterAccount(account: Account) {
     return this.store.reporters().some((reporter) => reporter.username === account.username)
   }
-  draft: Account | null = null
+  draft: AccountDraft | null = null
   deleting: Account | null = null
   editing = false
   error = ""
@@ -171,15 +192,19 @@ export default class AccountManagementPage implements OnInit {
       id: Date.now(),
       username: "",
       fullName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       cash: 0,
+      password: "",
+      role: this.reporters ? "reporter" : "client",
      // status: "Active",
     }
   }
   edit(a: Account) {
     this.editing = true
     this.error = ""
-    this.draft = { ...a }
+    this.draft = { ...a, firstName: a.firstName ?? "", lastName: a.lastName ?? "", password: "", role: a.role ?? "client" }
   }
   remove(a: Account) {
     this.deleting = a
@@ -197,6 +222,31 @@ export default class AccountManagementPage implements OnInit {
       account.username = account.username.trim().toLowerCase()
       if (!account.username || !account.email.includes("@"))
         throw new Error("Enter a username and valid email.")
+
+      if (this.reporters && !this.editing) {
+        if (!account.firstName.trim() || !account.lastName.trim() || account.password.length < 8)
+          throw new Error("Enter first name, last name, and a password of at least 8 characters.")
+
+        this.http
+          .post(`${this.apiBasePath}/auth/employees/reporter`, {
+            email: account.email.trim(),
+            username: account.username,
+            password: account.password,
+            first_name: account.firstName.trim(),
+            last_name: account.lastName.trim(),
+          })
+          .subscribe({
+            next: () => {
+              this.draft = null
+              this.loadReporterAccounts()
+            },
+            error: (error: { error?: { message?: string }; message?: string }) => {
+              this.error = error.error?.message || error.message || "Unable to create reporter account."
+            },
+          })
+        return
+      }
+
       this.store.saveAccount(this.key, { ...account })
       this.draft = null
     } catch (error) {
