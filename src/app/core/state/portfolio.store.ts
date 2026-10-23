@@ -87,7 +87,7 @@ export default class Store {
     { client: "jordanlee", symbol: "NVDA", quantity: 48, average: 118.24 },
     {
       client: "jordanlee",
-      symbol: "BTC/USD",
+      symbol: "BTC-USD",
       quantity: 0.124,
       average: 91842.1,
     },

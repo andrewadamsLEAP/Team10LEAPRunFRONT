@@ -28,8 +28,8 @@ import { BASE_PATH } from "../../../core/api/auth"
           <div><span>Market pulse</span><b>USD markets</b></div>
           <div class="pulse-stats">
             <span>S&amp;P 500 <em>+0.82%</em></span>
-            <span>BTC/USD <em>+2.64%</em></span>
-            <span>EUR/USD <em>+0.28%</em></span>
+            <span>BTC-USD <em>+2.64%</em></span>
+            <span>EUR-USD <em>+0.28%</em></span>
           </div>
           <app-chart/>
         </div>
