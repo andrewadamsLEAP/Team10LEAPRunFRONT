@@ -4,6 +4,12 @@ import { BASE_PATH } from "./auth"
 import { Instrument } from "../models/data"
 import { forkJoin, map, Observable, switchMap } from "rxjs"
 
+export type PriceHistoryPoint = {
+  ticker: string
+  price: number
+  timestamp: string
+}
+
 type BackendInstrument = {
   ticker: string
   displayName: string | null
@@ -35,7 +41,7 @@ export class MarketDataService {
   getInstrument(ticker: string): Observable<Instrument> {
     return this.http
       .get<BackendInstrument>(
-        `${this.apiBasePath}/v1/trading/market-data/instruments/${encodeURIComponent(ticker)}`,
+        `${this.apiBasePath}/v1/trading/market-data/instruments/${this.tickerPath(ticker)}`,
       )
       .pipe(map((instrument) => this.toInstrument(instrument)))
   }
@@ -46,6 +52,17 @@ export class MarketDataService {
         forkJoin(tickers.map((ticker) => this.getInstrument(ticker))),
       ),
     )
+  }
+
+  getPriceHistory(ticker: string, from: Date, to: Date): Observable<PriceHistoryPoint[]> {
+    return this.http.get<PriceHistoryPoint[]>(
+      `${this.apiBasePath}/v1/trading/market-data/prices/${this.tickerPath(ticker)}/chart-history`,
+      { params: { from: from.toISOString(), to: to.toISOString() } },
+    )
+  }
+
+  private tickerPath(ticker: string): string {
+    return encodeURIComponent(ticker.trim().replaceAll("/", "-").toUpperCase())
   }
 
   private toInstrument(instrument: BackendInstrument): Instrument {
