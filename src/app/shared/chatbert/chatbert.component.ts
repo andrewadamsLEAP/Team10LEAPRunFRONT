@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from "@angular/common/http"
 import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from "@angular/core"
+import { FormsModule } from "@angular/forms"
 import { ChatResponse, ChatService, validateChatMessage } from "../../core/api/chat.service"
 
 interface ChatMessage {
@@ -16,6 +17,7 @@ const INTRODUCTION =
 @Component({
   selector: "app-chatbert",
   standalone: true,
+  imports: [FormsModule],
   template: `
     @if (!isOpen()) {
       <button
