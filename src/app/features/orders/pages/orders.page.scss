@@ -1,0 +1,21 @@
+.order-table .data-row {
+  grid-template-columns: 1.1fr .8fr .7fr .7fr .8fr .8fr 1.5fr;
+}
+
+.order-table.with-client .data-row {
+  grid-template-columns: 1fr .9fr .8fr .6fr .7fr .8fr .7fr 1.4fr;
+}
+
+.side-tag {
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 10px;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-size: 7px;
+}
+
+.side-tag.sell {
+  background: #fbeaec;
+  color: #ac444c;
+}
