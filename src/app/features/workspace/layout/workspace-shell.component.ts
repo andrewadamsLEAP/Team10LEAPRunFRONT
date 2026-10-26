@@ -1,4 +1,4 @@
-import { Component, inject, signal } from "@angular/core"
+import { Component, OnDestroy, inject, signal } from "@angular/core"
 import { FormsModule } from "@angular/forms"
 import { HttpClient } from "@angular/common/http"
 import {
@@ -11,6 +11,7 @@ import Store, { ClientProfile } from "../../../core/state/portfolio.store"
 import Brand from "../../../shared/brand/brand.component"
 import { TokenStore } from "../../../core/auth/token-store.service"
 import { BASE_PATH } from "../../../core/api/auth"
+import { catchError, EMPTY, exhaustMap, Subscription, timer } from "rxjs"
 
 @Component({
   selector: "app-shell",
@@ -44,7 +45,7 @@ import { BASE_PATH } from "../../../core/api/auth"
       </div>
     }`,
 })
-export default class Shell {
+export default class Shell implements OnDestroy {
   store = inject(Store)
   router = inject(Router)
   tokenStore = inject(TokenStore)
@@ -57,6 +58,7 @@ export default class Shell {
   private promptInterval: number | null = null
   private expiryWatch: number | null = null
   private logoutPending = false
+  private holdingsPolling?: Subscription
   menu = false
   clientPages = [
     ["home", "Overview"],
@@ -92,6 +94,9 @@ export default class Shell {
     }
     if (this.store.session()?.role === "client") {
       this.store.loadInstruments()
+      this.holdingsPolling = timer(0, 5000).pipe(
+        exhaustMap(() => this.store.refreshHoldings().pipe(catchError(() => EMPTY))),
+      ).subscribe()
       if (!this.store.clientProfile()) {
         this.http
           .get<ClientProfile>(`${this.apiBasePath}/v1/clients/profile`)
@@ -110,6 +115,11 @@ export default class Shell {
           .some((value) => (value ?? "").toLowerCase().includes(query)),
       )
       .slice(0, 8)
+  }
+  ngOnDestroy() {
+    this.holdingsPolling?.unsubscribe()
+    if (this.expiryWatch !== null) window.clearInterval(this.expiryWatch)
+    if (this.promptInterval !== null) window.clearInterval(this.promptInterval)
   }
   displayKind(assetType: "STOCK" | "CRYPTO" | "FOREX") {
     return assetType[0] + assetType.slice(1).toLowerCase()
@@ -195,6 +205,7 @@ export default class Shell {
   }
 
   private finalizeLogout() {
+    this.holdingsPolling?.unsubscribe()
     if (this.promptInterval !== null) {
       window.clearInterval(this.promptInterval)
       this.promptInterval = null

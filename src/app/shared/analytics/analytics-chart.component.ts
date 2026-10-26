@@ -25,10 +25,12 @@ import type { ReportChart } from "../../core/api/analytics-presentation"
       } @else {
         <svg viewBox="0 0 700 230" role="img" [attr.aria-label]="description()" preserveAspectRatio="xMidYMid meet">
           <path d="M30 20H680M30 80H680M30 140H680M30 200H680" class="grid" />
-          @if (appearance() === 'portfolio' && points().length > 1) {
-            <polygon [attr.points]="area()" class="area" />
+          @for (segment of segments(); track $index) {
+            @if (appearance() === 'portfolio' && segment.length > 1) {
+              <polygon [attr.points]="segmentArea(segment)" class="area" />
+            }
+            <polyline [attr.points]="segmentLine(segment)" fill="none" class="line" />
           }
-          <polyline [attr.points]="line()" fill="none" class="line" />
           @for (point of points(); track $index) {
             <circle [attr.cx]="point.x" [attr.cy]="point.y" r="4"><title>{{ point.label }}: {{ format(point.value) }}</title></circle>
           }
@@ -74,10 +76,11 @@ export default class AnalyticsChart {
   description = input.required<string>()
   appearance = input<"default" | "portfolio">("default")
   readonly slices = computed(() => {
-    const total = this.chart().values.reduce((sum, value) => sum + Math.max(0, value), 0)
+    const total = this.chart().values.reduce<number>((sum, value) => sum + Math.max(0, value ?? 0), 0)
     const colors = ["#16835e", "#477bc5", "#e3a126", "#9173bd", "#d57563"]
     let start = 0
-    return this.chart().values.map((value, index) => {
+    return this.chart().values.map((raw, index) => {
+      const value = raw ?? 0
       const percent = total ? Math.max(0, value) / total * 100 : 0
       const slice = { label: this.chart().labels[index], value, percent, start, end: start + percent, color: colors[index % colors.length] }
       start += percent
@@ -88,19 +91,39 @@ export default class AnalyticsChart {
   readonly pieDescription = computed(() => `${this.description()}: ${this.slices().map((slice) => `${slice.label} ${slice.percent.toFixed(2)}%`).join(", ")}`)
   readonly points = computed(() => {
     const chart = this.chart()
-    const max = Math.max(...chart.values, 1)
-    const min = Math.min(...chart.values, 0)
+    const values = chart.values.filter((value): value is number => value !== null && Number.isFinite(value))
+    const portfolio = this.appearance() === "portfolio"
+    const high = values.length ? Math.max(...values) : 1
+    const low = values.length ? Math.min(...values) : 0
+    const padding = Math.max((high - low) * 0.1, Math.abs(high) * 0.0001, 0.01)
+    const max = portfolio ? high + padding : Math.max(high, 1)
+    const min = portfolio ? low - padding : Math.min(low, 0)
     const timestamps = chart.labels.map(Date.parse)
     const useTime = chart.timeBased && timestamps.every(Number.isFinite)
     const start = Math.min(...timestamps)
     const end = Math.max(...timestamps)
-    return chart.values.map((value, index) => ({
-      label: chart.labels[index], value, fraction: Math.max(0, value) / max,
+    return chart.values.flatMap((value, index) => value === null || !Number.isFinite(value) ? [] : [{
+      label: chart.labels[index], value, index, fraction: Math.max(0, value) / max,
       x: chart.values.length === 1 || (useTime && end === start) ? 355
         : 30 + (useTime ? (timestamps[index] - start) / (end - start) : index / (chart.values.length - 1)) * 650,
       y: 200 - (value - min) / (max - min) * 180,
-    }))
+    }])
   })
+  readonly segments = computed(() => {
+    const segments: ReturnType<typeof this.points>[] = []
+    for (const point of this.points()) {
+      const last = segments.at(-1)
+      if (!last || last.at(-1)!.index + 1 !== point.index) segments.push([point])
+      else last.push(point)
+    }
+    return segments
+  })
+  segmentLine(points: ReturnType<typeof this.points>) {
+    return points.map((point) => `${point.x},${point.y}`).join(" ")
+  }
+  segmentArea(points: ReturnType<typeof this.points>) {
+    return points.length > 1 ? `${points[0].x},200 ${this.segmentLine(points)} ${points[points.length - 1].x},200` : ""
+  }
   readonly line = computed(() => this.points().map((point) => `${point.x},${point.y}`).join(" "))
   readonly area = computed(() => {
     const points = this.points()
