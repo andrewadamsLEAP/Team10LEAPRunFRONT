@@ -9,6 +9,40 @@ export const portfolioPeriods = ["1D", "1W", "1M", "1Y"] as const
 export type PortfolioPeriod = typeof portfolioPeriods[number]
 export type PortfolioObservation = { timestamp: string; cash: number; invested: number; total: number; positions: number; oldestQuote: string | null }
 type Holding = { clientId: number; ticker: string; quantity: number }
+export type PortfolioHistoryPoint = {
+  timestamp: string
+  cash: number | null
+  invested: number | null
+  total: number | null
+  complete: boolean
+  missingPrices?: unknown
+}
+export type PortfolioHistory = {
+  currency: string
+  points: PortfolioHistoryPoint[]
+  coverage: unknown
+  missingPrices?: unknown
+}
+
+export function hasMissingPrices(value: unknown): boolean {
+  if (Array.isArray(value)) return value.length > 0
+  if (value && typeof value === "object") return Object.keys(value).length > 0
+  return typeof value === "number" ? value > 0 : Boolean(value)
+}
+
+export function portfolioHistorySeries(points: PortfolioHistoryPoint[], period: PortfolioPeriod, to: number) {
+  const range = portfolioRange(period, to)
+  const unique = new Map<number, PortfolioHistoryPoint>()
+  for (const point of points) {
+    const timestamp = Date.parse(point.timestamp)
+    if (Number.isFinite(timestamp) && timestamp >= range.from && timestamp <= range.to) unique.set(timestamp, point)
+  }
+  return [...unique.entries()].sort(([left], [right]) => left - right).map(([, point]) => ({
+    timestamp: point.timestamp,
+    invested: point.complete === true && !hasMissingPrices(point.missingPrices)
+      && typeof point.invested === "number" && Number.isFinite(point.invested) ? point.invested : null,
+  }))
+}
 
 export function portfolioRange(period: PortfolioPeriod, to: number): { from: number; to: number } {
   return { from: to - ({ "1D": 1, "1W": 7, "1M": 30, "1Y": 365 }[period]) * 86400000, to }
@@ -41,6 +75,23 @@ export class PortfolioValueService {
   private readonly profile = inject(ClientProfileApiService)
   private readonly market = inject(MarketDataService)
   private readonly tokens = inject(TokenStore)
+
+  history(period: PortfolioPeriod, to = Date.now()): Observable<PortfolioHistory> {
+    const user = this.tokens.currentUser()
+    const clientId = Number(user?.sub)
+    if (user?.actorType !== "client" || !Number.isSafeInteger(clientId) || clientId <= 0) {
+      throw new Error("A signed-in client is required to view portfolio history.")
+    }
+    const range = portfolioRange(period, to)
+    return this.http.get<PortfolioHistory>("/api/v1/portfolio/history", {
+      params: { from: new Date(range.from).toISOString(), to: new Date(range.to).toISOString() },
+    }).pipe(timeout({ first: 20000 }), map((history) => {
+      if (history.currency !== "USD" || !Array.isArray(history.points)) {
+        throw new Error("The portfolio history API returned an unsupported response.")
+      }
+      return history
+    }))
+  }
 
   observe(): Observable<PortfolioObservation> {
     const user = this.tokens.currentUser()

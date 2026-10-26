@@ -2,7 +2,7 @@ import type { AnalyticsValue, TrendMetric } from "./analytics-api.service"
 
 type Row = { [key: string]: AnalyticsValue }
 export type ReportMetric = { label: string; value: number | null; format: "number" | "money" | "percent" }
-export type ReportChart = { kind: "bars" | "line" | "pie"; labels: string[]; values: number[]; format: ReportMetric['format']; timeBased?: boolean }
+export type ReportChart = { kind: "bars" | "line" | "pie"; labels: string[]; values: (number | null)[]; format: ReportMetric['format']; timeBased?: boolean }
 export type ReportPresentation = {
   metrics: ReportMetric[]
   chart: ReportChart | null

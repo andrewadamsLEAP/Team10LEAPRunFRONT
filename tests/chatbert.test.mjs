@@ -6,6 +6,7 @@ import ts from "typescript"
 import "@angular/compiler"
 import { HttpErrorResponse, HttpHeaders, HttpRequest } from "@angular/common/http"
 import { createEnvironmentInjector, Injector, runInInjectionContext } from "@angular/core"
+import { FormsModule } from "@angular/forms"
 import { Router } from "@angular/router"
 import { NEVER, Subject, of, throwError } from "rxjs"
 import { TimeoutError } from "rxjs"
@@ -63,6 +64,10 @@ try {
   const { SKIP_AUTH, authInterceptor } = await import(interceptorUrl)
   const { ChatService, validateChatMessage } = await import(serviceUrl)
   const { default: ChatbertComponent } = await import(componentUrl)
+
+  const dependencies = ChatbertComponent.\u0275cmp.dependencies
+  const componentImports = typeof dependencies === "function" ? dependencies() : dependencies
+  assert.ok(componentImports.includes(FormsModule), "Chatbert needs FormsModule so ngSubmit handles submission without navigating")
 
   assert.equal(validateChatMessage("   "), "empty")
   assert.equal(validateChatMessage("x".repeat(1001)), "too-long")
