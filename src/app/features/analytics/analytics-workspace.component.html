@@ -1,0 +1,74 @@
+<div class="page-wrap">
+  <div class="page-intro">
+    <div><span class="eyebrow">{{ audience() === 'client' ? 'Portfolio insights' : 'All-client insights' }}</span>
+      <h1>{{ audience() === 'client' ? 'Your analytics' : 'Platform analytics' }}</h1>
+      <p>{{ audience() === 'client' ? 'Understand your holdings, portfolio allocation, and order activity.' : 'Explore client activity, trading performance, and filtered order reports.' }}</p>
+    </div>
+    <span class="source-badge">Python analytics</span>
+  </div>
+
+  <form class="report-filters" (ngSubmit)="refresh()">
+    <label>{{ audience() === 'client' ? 'Order history (days)' : 'Period (days)' }}
+      <input name="days" type="number" min="1" max="3650" step="1" required [(ngModel)]="days" />
+    </label>
+    @if (audience() === 'employee') {
+      <label>Ticker<input name="ticker" maxlength="40" placeholder="All instruments" [(ngModel)]="ticker" /></label>
+      <label>Client ID<input name="clientId" type="number" min="1" step="1" placeholder="All clients" [(ngModel)]="clientId" /></label>
+      <label>Start date<input name="startDate" type="date" [(ngModel)]="startDate" /></label>
+      <label>End date<input name="endDate" type="date" max="9999-12-30" [(ngModel)]="endDate" /></label>
+      <label>Order status<select name="orderStatus" [(ngModel)]="orderStatus">
+        <option value="">All statuses</option><option value="FULFILLED">Fulfilled</option>
+        <option value="PENDING">Pending</option><option value="CANCELLED">Cancelled</option>
+      </select></label>
+      <label>Trend grouping<select name="granularity" [(ngModel)]="granularity">
+        <option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option>
+      </select></label>
+      <label>Chart metric<select name="metric" [(ngModel)]="metric">
+        <option value="total_volume">Total volume</option><option value="trade_count">Trade count</option>
+        <option value="avg_trade_value">Average trade value</option><option value="active_clients">Active clients</option>
+        <option value="instruments_traded">Instruments traded</option>
+      </select></label>
+      <label>Rank instruments by<select name="sortBy" [(ngModel)]="sortBy">
+        <option value="total_volume">Total volume</option><option value="trade_count">Trade count</option><option value="total_quantity">Quantity</option>
+      </select></label>
+      <label>Instrument limit<input name="instrumentLimit" type="number" min="1" max="1000" step="1" required [(ngModel)]="instrumentLimit" /></label>
+      <label>Orders per page<select name="limit" [(ngModel)]="limit">
+        <option [ngValue]="25">25</option><option [ngValue]="50">50</option><option [ngValue]="100">100</option><option [ngValue]="500">500</option>
+      </select></label>
+    }
+    <button type="submit">{{ loading() ? 'Refresh reports' : 'Apply & refresh' }}</button>
+  </form>
+  @if (validationError()) { <p class="validation-error" role="alert">{{ validationError() }}</p> }
+  <div class="report-summary" aria-live="polite">
+    <span>Applied period: {{ appliedFilters().days }} days</span>
+    @if (audience() === 'client') { <span>Holdings and allocation reflect current positions.</span> }
+    @else {
+      <span>Instrument: {{ appliedFilters().ticker || 'All' }}</span>
+      <span>Client: {{ appliedFilters().client_id || 'All' }}</span>
+      <span>Status: {{ appliedFilters().order_status || 'All (volume defaults to fulfilled)' }}</span>
+      @if (appliedFilters().start_date || appliedFilters().end_date) {
+        <span>Dates: {{ appliedFilters().start_date || 'Rolling start' }} – {{ appliedFilters().end_date || 'Today' }}</span>
+      }
+      <span>All employee reports below use the applied filters.</span>
+    }
+    @if (loading()) { <span role="status">Reports are updating…</span> }
+  </div>
+  <p class="warehouse-note">Reports read the analytics warehouse, not live trading tables. New trades require a successful ETL run.
+    If a recent period is empty, choose a wider period or an explicit date range; reports never substitute another client's data.</p>
+  <div class="report-grid">
+    @for (report of reports(); track report.id) {
+      <app-analytics-card [report]="report" (retry)="retryReport($event)" [class.wide]="audience() === 'client' && report.id === 'gainers'" />
+    }
+  </div>
+  @if (audience() === 'employee') {
+    @if (orderReport(); as report) {
+      <div class="orders-report"><app-analytics-card [report]="report" (retry)="retryReport($event)" />
+        <nav class="pagination" aria-label="Order report pages">
+          <button type="button" [disabled]="report.loading || offset() === 0" (click)="changePage(-1)">Previous</button>
+          <span>Page {{ offset() / pageSize() + 1 }} · up to {{ pageSize() }} orders per page</span>
+          <button type="button" [disabled]="!canNextPage()" (click)="changePage(1)">Next</button>
+        </nav>
+      </div>
+    }
+  }
+</div>

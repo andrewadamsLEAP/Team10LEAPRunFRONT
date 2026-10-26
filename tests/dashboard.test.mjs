@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
-import { signal } from "@angular/core"
+import { computed, signal } from "@angular/core"
 import { of, Subject, throwError } from "rxjs"
 import ts from "typescript"
 
@@ -17,7 +17,7 @@ const { outputText } = ts.transpileModule(
 function dashboard(records, subject = "47") {
   const requestedIds = []
   const providers = {
-    store: {},
+    store: { instruments: () => [], instrumentLoading: () => false, loadInstruments: () => {} },
     token: { currentUser: () => subject == null ? null : { sub: subject } },
     orders: {
       getAllClientOrders: (id) => {
@@ -27,9 +27,9 @@ function dashboard(records, subject = "47") {
     },
   }
   const Page = new Function(
-    "inject", "signal", "Store", "OrdersApiService", "TokenStore",
+    "inject", "signal", "computed", "Store", "OrdersApiService", "TokenStore",
     `${outputText}\nreturn DashboardPage`,
-  )((token) => providers[token], signal, "store", "orders", "token")
+  )((token) => providers[token], signal, computed, "store", "orders", "token")
   const page = new Page()
   page.ngOnInit()
   return { page, requestedIds }

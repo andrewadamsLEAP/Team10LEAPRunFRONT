@@ -7,7 +7,7 @@
         <div>
           <span>{{ review ? 'Review order' : 'Place an order' }}</span>
           <h1>{{ a.symbol }}</h1>
-          <p>{{ displayName(a.symbol, a.name) }}</p>
+          <p>{{ a.name }}</p>
         </div>
       </div>
       @if (!review) {

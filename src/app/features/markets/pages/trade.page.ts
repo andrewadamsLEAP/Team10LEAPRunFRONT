@@ -1,4 +1,4 @@
-import { Component, DestroyRef, DestroyRef, inject, OnInit, signal } from "@angular/core"
+import { Component, DestroyRef, inject, OnInit, signal } from "@angular/core"
 import { CurrencyPipe } from "@angular/common"
 import { FormsModule } from "@angular/forms"
 import { ActivatedRoute, Router } from "@angular/router"
@@ -10,7 +10,6 @@ import { ClientProfileApiService } from "../../../core/api/client-profile-api.se
 import { MarketDataService } from "../../../core/api/market-data.service"
 import { Instrument } from "../../../core/models/data"
 import { interval, startWith, switchMap } from "rxjs"
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop"
 
 @Component({
   selector: "app-trade-page",
@@ -31,7 +30,7 @@ export default class TradePage implements OnInit {
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe((params) => {
       this.review = false
-      this.error = ""
+      this.error.set("")
       const symbol = params.get("symbol")
       if (symbol) this.store.loadInstrument(symbol.trim().replaceAll("/", "-").toUpperCase())
     })

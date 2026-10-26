@@ -4,19 +4,17 @@ import { RouterLink } from "@angular/router"
 import { OrdersApiService } from "../../../core/api/orders-api.service"
 import { TokenStore } from "../../../core/auth/token-store.service"
 import Store from "../../../core/state/portfolio.store"
-import Chart from "../../../shared/charts/price-chart.component"
+import PortfolioValueComponent from "../../../shared/charts/portfolio-value.component"
 import { Instrument } from "../../../core/models/data"
 
 @Component({
   selector: "app-dashboard-page",
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, RouterLink, Chart],
+  imports: [CurrencyPipe, DecimalPipe, RouterLink, PortfolioValueComponent],
   template: `
     <div class="page-wrap">
       <div class="page-intro"><div><span class="eyebrow">Client dashboard</span><h1>Good morning, {{ store.name }}</h1><p>Here is what is happening with your portfolio today.</p></div></div>
-      <section class="portfolio-hero"><div class="portfolio-copy"><span>Total portfolio value</span><h2>{{ store.cash + store.invested | currency:'USD' }}</h2><div class="gain">USD portfolio</div>
-        <div class="period-tabs">@for (p of periods; track p) { <button [class.active]="period === p" (click)="period = p">{{ p }}</button> }</div>
-      </div><app-chart [flat]="!store.holdings.length" [period]="period"/><div class="portfolio-stats"><div><span>Buying power</span><strong>{{ store.cash | currency:'USD' }}</strong></div><div><span>Invested</span><strong>{{ store.invested | currency:'USD' }}</strong></div><div><span>Positions</span><strong>{{ store.holdings.length }}</strong></div></div></section>
+      <app-portfolio-value />
       <div class="content-grid"><section class="surface"><div class="section-title"><div><span class="eyebrow">Top 10 by daily % change</span><h2>Trending tickers</h2></div><a routerLink="/client/markets">Explore markets</a></div>
         @if (store.instrumentLoading()) { <p class="empty-state" role="status">Loading trending tickers...</p> }
         @else if (store.instrumentError(); as error) { <p class="empty-state" role="alert">{{ error }} <button class="secondary-button" (click)="store.loadInstruments()">Retry</button></p> }
@@ -49,8 +47,6 @@ export default class DashboardPage implements OnInit {
   }[]>([])
   readonly ordersLoading = signal(false)
   readonly ordersError = signal("")
-  periods = ["1D", "1W", "1M", "1Y"]
-  period = "1M"
 
   ngOnInit() {
     const clientId = Number(this.tokenStore.currentUser()?.sub)
@@ -106,6 +102,9 @@ export default class DashboardPage implements OnInit {
   }
 
   positionValue(symbol: string, quantity: number) {
-    return this.store.assets.find((a) => a.symbol === symbol)!.price * quantity
+    const canonical = (ticker: string) => ticker.replaceAll("/", "-").toUpperCase()
+    const instrument = this.store.instruments().find((item) => canonical(item.ticker) === canonical(symbol))
+    const price = instrument?.bidPrice ?? instrument?.askPrice
+    return price === null || price === undefined ? null : price * quantity
   }
 }
