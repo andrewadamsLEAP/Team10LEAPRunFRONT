@@ -115,8 +115,10 @@ export default class PortfolioValueComponent {
         exhaustMap(() => {
           this.loading.set(true)
           const to = Date.now()
-          return defer(() => this.api.history(period, to)).pipe(map((history) => ({ history, to })), catchError(() => {
-            this.historyError.set("Unable to load holdings history. Retry when the backend is available.")
+          return defer(() => this.api.history(period, to)).pipe(map((history) => ({ history, to })), catchError((error: { status?: number; name?: string }) => {
+            const reason = error.name === "TimeoutError" ? "request timed out"
+              : error.status ? `HTTP ${error.status}` : "connection or response error"
+            this.historyError.set(`Unable to load ${period} holdings history (${reason}). Retry when the backend is available.`)
             this.loading.set(false)
             return EMPTY
           }))

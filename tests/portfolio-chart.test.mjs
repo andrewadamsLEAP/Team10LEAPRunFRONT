@@ -54,6 +54,8 @@ const {PortfolioValueService}=compile(source.slice(source.indexOf('export class 
 const api=new PortfolioValueService()
 assert.equal((await firstValueFrom(api.history('1W', now))).points.length, 4)
 assert.deepEqual(requested.at(-1), {path:'/api/v1/portfolio/history',options:{params:{from:'2026-10-19T12:00:00.000Z',to:'2026-10-26T12:00:00.000Z'}}})
+await firstValueFrom(api.history('1D', now))
+assert.deepEqual(requested.at(-1), {path:'/api/v1/portfolio/history',options:{params:{from:'2026-10-25T12:00:00.000Z',to:'2026-10-26T12:00:00.000Z'}}})
 const observation=await firstValueFrom(api.observe())
 assert.equal(observation.cash,1000)
 assert.equal(observation.invested,200)
@@ -81,6 +83,29 @@ for (const invalid of [null,{sub:'47',actorType:'employee'},{sub:'bad',actorType
 }
 
 const componentSource=await read('src/app/shared/charts/portfolio-value.component.ts')
+const effects=[]
+let historyFailure={status:400}
+const {PortfolioValueComponent:ErrorPortfolio}=compile(componentSource.slice(componentSource.indexOf('export default class')),['PortfolioValueComponent'],{
+  inject:key=>key === 'api' ? {history:()=>throwError(()=>historyFailure)} : {currentUser:()=>({sub:'47',actorType:'client'})},
+  PortfolioValueService:'api',TokenStore:'token',effect:callback=>effects.push(callback),signal,computed,Subject,
+  portfolioPeriods:helpers.portfolioPeriods,portfolioHistorySeries:helpers.portfolioHistorySeries,hasMissingPrices:helpers.hasMissingPrices,
+  catchError,defer,EMPTY,exhaustMap,map,merge,timer:()=>of(0),
+})
+const failedHistory=new ErrorPortfolio()
+for (const [period,failure,expected] of [
+  ['1D',{status:400},'HTTP 400'],
+  ['1W',{status:404},'HTTP 404'],
+  ['1Y',{name:'TimeoutError'},'request timed out'],
+  ['1M',{status:0},'connection or response error'],
+]) {
+  historyFailure=failure
+  failedHistory.selectPeriod(period)
+  let cleanup
+  effects[0](callback=>{cleanup=callback})
+  assert.ok(failedHistory.historyError().includes(`${period} holdings history (${expected})`))
+  assert.equal(failedHistory.loading(),false)
+  cleanup()
+}
 const {PortfolioValueComponent}=compile(componentSource.slice(componentSource.indexOf('export default class')),['PortfolioValueComponent'],{
   inject:()=>({}),PortfolioValueService:'api',TokenStore:'token',effect:()=>{},signal,computed,Subject,
   portfolioPeriods:helpers.portfolioPeriods,portfolioHistorySeries:helpers.portfolioHistorySeries,hasMissingPrices:helpers.hasMissingPrices,
@@ -93,6 +118,26 @@ for (const [period,length] of [['1D',1],['1W',2],['1M',3],['1Y',4]]) {
   assert.equal(component.period(),period)
   assert.equal(component.chart().values.length,length,`${period} must change the actual series range`)
 }
+const shortRangeFixtures=[['1D',25,1],['1W',29,6]].map(([period,count,hours])=>{
+  const gap=Math.floor(count/2)
+  const samples=Array.from({length:count},(_,index)=>historyPoint(
+    new Date(actualNow-(count-1-index)*hours*3600000).toISOString(),
+    index === gap ? null : 1000+index,
+    index !== gap,
+    index === gap ? ['AAPL'] : [],
+  ))
+  component.selectPeriod(period)
+  component.now.set(actualNow)
+  component.history.set({currency:'USD',coverage:{complete:false},points:samples})
+  const data=component.chart()
+  assert.equal(data.values.length,count,`${period} must retain both range endpoints and every backend sample`)
+  assert.equal(data.labels[0],new Date(helpers.portfolioRange(period,actualNow).from).toISOString())
+  assert.equal(data.labels.at(-1),new Date(actualNow).toISOString())
+  assert.equal(data.values[0],1000,'The chart must plot invested, not total or share quantity')
+  assert.equal(data.values[gap],null,`${period} must preserve incomplete valuations as gaps`)
+  assert.equal(component.incomplete(),true)
+  return {period,count,gap,data}
+})
 const chartSource=await read('src/app/shared/analytics/analytics-chart.component.ts')
 let chartInput={kind:'pie',labels:['stock','crypto','bitcoin'],values:[600,300,100],format:'money'}
 const {AnalyticsChart}=compile(chartSource.slice(chartSource.indexOf('export default class')),['AnalyticsChart'],{
@@ -117,6 +162,15 @@ chart=new AnalyticsChart()
 assert.equal(chart.points().length,3)
 assert.deepEqual(chart.segments().map(segment=>segment.length),[1,2],'Missing prices must break both line and area')
 assert.equal(chart.segmentArea(chart.segments()[0]),'')
+for (const fixture of shortRangeFixtures) {
+  chartInput=fixture.data
+  chart=new AnalyticsChart()
+  assert.equal(chart.points().length,fixture.count-1)
+  assert.deepEqual(chart.segments().map(segment=>segment.length),[fixture.gap,fixture.count-fixture.gap-1])
+  assert.equal(chart.points()[0].x,30)
+  assert.equal(chart.points().at(-1).x,680)
+  assert.ok(chart.points().every(point=>Number.isFinite(point.x)&&Number.isFinite(point.y)),`${fixture.period} coordinates must be finite`)
+}
 
 const storeSource=await read('src/app/core/state/portfolio.store.ts')
 const {Store}=compile(storeSource.slice(storeSource.indexOf('export default class')),['Store'],{
