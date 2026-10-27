@@ -1,0 +1,287 @@
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: #e2ebe5;
+  background: #101713;
+  --ink: #e2ebe5;
+  --muted: #9aa99f;
+  --line: #2b3a32;
+  --surface: #18221d;
+  --green-soft: #1d3b2e;
+  --green-dark: #67d5ab;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .client-app,
+:root[data-theme="dark"] .employee-shell {
+  background: #101713;
+  color: #e2ebe5;
+}
+
+:root[data-theme="dark"] .client-header,
+:root[data-theme="dark"] .employee-sidebar,
+:root[data-theme="dark"] .employee-main > header,
+:root[data-theme="dark"] .surface,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .account-modal,
+:root[data-theme="dark"] .session-expiry-modal,
+:root[data-theme="dark"] .toast,
+:root[data-theme="dark"] .header-search-results,
+:root[data-theme="dark"] .search-results,
+:root[data-theme="dark"] .client-nav,
+:root[data-theme="dark"] .history-count {
+  background-color: #18221d;
+  color: #e2ebe5;
+}
+
+:root[data-theme="dark"] .client-header,
+:root[data-theme="dark"] .employee-sidebar,
+:root[data-theme="dark"] .employee-main > header,
+:root[data-theme="dark"] .surface,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .account-modal,
+:root[data-theme="dark"] .session-expiry-modal,
+:root[data-theme="dark"] .history-count,
+:root[data-theme="dark"] .row-actions button {
+  border-color: #2b3a32;
+}
+
+:root[data-theme="dark"] .brand,
+:root[data-theme="dark"] .client-account,
+:root[data-theme="dark"] .client-account > a:not(.user-avatar),
+:root[data-theme="dark"] .employee-sidebar nav a,
+:root[data-theme="dark"] .employee-main > header strong,
+:root[data-theme="dark"] .section-title h2,
+:root[data-theme="dark"] .page-intro h1,
+:root[data-theme="dark"] .ticker-heading h1,
+:root[data-theme="dark"] .ticker-price strong,
+:root[data-theme="dark"] .confirm-card h1,
+:root[data-theme="dark"] .modal-heading h2,
+:root[data-theme="dark"] .profile-heading h2,
+:root[data-theme="dark"] .analytics-grid,
+:root[data-theme="dark"] .employee-page,
+:root[data-theme="dark"] .data-row strong,
+:root[data-theme="dark"] .data-row b,
+:root[data-theme="dark"] .ticker-row,
+:root[data-theme="dark"] .history-table .data-row,
+:root[data-theme="dark"] .history-section-heading h2 {
+  color: #e2ebe5;
+}
+
+:root[data-theme="dark"] .employee-main > header span,
+:root[data-theme="dark"] .employee-status,
+:root[data-theme="dark"] .client-nav a,
+:root[data-theme="dark"] .client-account > button,
+:root[data-theme="dark"] .employee-user > button,
+:root[data-theme="dark"] .employee-user > span,
+:root[data-theme="dark"] .section-title > button,
+:root[data-theme="dark"] .section-title > a,
+:root[data-theme="dark"] .ticker-row.ticker-head,
+:root[data-theme="dark"] .data-row.data-head,
+:root[data-theme="dark"] .ticker-name small,
+:root[data-theme="dark"] .mini-list-row small,
+:root[data-theme="dark"] .order-mini small,
+:root[data-theme="dark"] .market-stats dt,
+:root[data-theme="dark"] .profile-readonly-item,
+:root[data-theme="dark"] .profile-readonly-item strong,
+:root[data-theme="dark"] .profile-fields label span,
+:root[data-theme="dark"] .account-modal label > span,
+:root[data-theme="dark"] .auth-card label span,
+:root[data-theme="dark"] .form-field > span,
+:root[data-theme="dark"] .back-button,
+:root[data-theme="dark"] .text-button {
+  color: #a4b2a9;
+}
+
+:root[data-theme="dark"] .workspace-label,
+:root[data-theme="dark"] .header-search,
+:root[data-theme="dark"] .token-countdowns,
+:root[data-theme="dark"] .fund-tabs,
+:root[data-theme="dark"] .ticker-page-search,
+:root[data-theme="dark"] .profile-readonly-item,
+:root[data-theme="dark"] .fund-input,
+:root[data-theme="dark"] .confirmation-details,
+:root[data-theme="dark"] .transaction-table.employee-transactions .data-head,
+:root[data-theme="dark"] .history-table .data-row.data-head,
+:root[data-theme="dark"] .cash-badge,
+:root[data-theme="dark"] .auth-form-panel,
+:root[data-theme="dark"] .role-picker,
+:root[data-theme="dark"] .auth-card input,
+:root[data-theme="dark"] .form-field select,
+:root[data-theme="dark"] .quantity-input,
+:root[data-theme="dark"] .profile-fields input,
+:root[data-theme="dark"] .account-modal input,
+:root[data-theme="dark"] .chatbert-panel,
+:root[data-theme="dark"] .chatbert-header,
+:root[data-theme="dark"] .chatbert-composer,
+:root[data-theme="dark"] .chatbert-message,
+:root[data-theme="dark"] .chatbert-pending {
+  background-color: #18221d;
+  color: #e2ebe5;
+}
+
+:root[data-theme="dark"] .header-search,
+:root[data-theme="dark"] .token-countdowns,
+:root[data-theme="dark"] .ticker-page-search,
+:root[data-theme="dark"] .fund-input,
+:root[data-theme="dark"] .auth-card input,
+:root[data-theme="dark"] .form-field select,
+:root[data-theme="dark"] .quantity-input,
+:root[data-theme="dark"] .profile-fields input,
+:root[data-theme="dark"] .account-modal input,
+:root[data-theme="dark"] .chatbert-panel,
+:root[data-theme="dark"] .chatbert-message,
+:root[data-theme="dark"] .chatbert-composer textarea {
+  border-color: #35463c;
+}
+
+:root[data-theme="dark"] .header-search-results a,
+:root[data-theme="dark"] .header-search input,
+:root[data-theme="dark"] .ticker-page-search input,
+:root[data-theme="dark"] .fund-input input,
+:root[data-theme="dark"] .profile-fields input,
+:root[data-theme="dark"] .account-modal input,
+:root[data-theme="dark"] .auth-card input,
+:root[data-theme="dark"] .form-field select,
+:root[data-theme="dark"] .quantity-input {
+  color: #e2ebe5;
+}
+
+:root[data-theme="dark"] .header-search-results a:hover,
+:root[data-theme="dark"] .search-results button:hover,
+:root[data-theme="dark"] button.ticker-row:hover,
+:root[data-theme="dark"] .history-table .data-row:not(.data-head):hover,
+:root[data-theme="dark"] .chatbert-icon-button:hover {
+  background-color: #22372b;
+}
+
+:root[data-theme="dark"] .ticker-row,
+:root[data-theme="dark"] .mini-list-row,
+:root[data-theme="dark"] .order-mini,
+:root[data-theme="dark"] .data-row,
+:root[data-theme="dark"] .market-stats dl div,
+:root[data-theme="dark"] .confirmation-details div,
+:root[data-theme="dark"] .history-table .data-row,
+:root[data-theme="dark"] .profile-heading {
+  border-color: #2b3a32;
+}
+
+:root[data-theme="dark"] .ticker-name > i,
+:root[data-theme="dark"] .mini-list-row > i,
+:root[data-theme="dark"] .holding-name > i,
+:root[data-theme="dark"] .large-symbol,
+:root[data-theme="dark"] .profile-avatar,
+:root[data-theme="dark"] .user-avatar {
+  background-color: #254537;
+  color: #7de2ba;
+}
+
+:root[data-theme="dark"] .status,
+:root[data-theme="dark"] .allocation-bar,
+:root[data-theme="dark"] .breakdown > i {
+  background-color: #293a31;
+  color: #c1cdc5;
+}
+
+:root[data-theme="dark"] .status.fulfilled,
+:root[data-theme="dark"] .status.complete,
+:root[data-theme="dark"] .status.active,
+:root[data-theme="dark"] .history-status {
+  background-color: #1d3b2e;
+  color: #80ddb5;
+}
+
+:root[data-theme="dark"] .status.pending,
+:root[data-theme="dark"] .history-status.pending {
+  background-color: #42371f;
+  color: #e5c16c;
+}
+
+:root[data-theme="dark"] .status.cancelled,
+:root[data-theme="dark"] .status.suspended,
+:root[data-theme="dark"] .history-status.cancelled,
+:root[data-theme="dark"] .history-status.rejected {
+  background-color: #42282c;
+  color: #e89aa0;
+}
+
+:root[data-theme="dark"] .auth-card,
+:root[data-theme="dark"] .auth-card h2,
+:root[data-theme="dark"] .profile-heading h2,
+:root[data-theme="dark"] .profile-readonly-item strong,
+:root[data-theme="dark"] .data-row,
+:root[data-theme="dark"] .ticker-name b,
+:root[data-theme="dark"] .mini-list-row b,
+:root[data-theme="dark"] .order-mini b,
+:root[data-theme="dark"] .stat-card strong,
+:root[data-theme="dark"] .modal-heading h2,
+:root[data-theme="dark"] .session-expiry-modal h2 {
+  color: #e2ebe5;
+}
+
+:root[data-theme="dark"] .role-picker button.active,
+:root[data-theme="dark"] .fund-tabs button.active {
+  background-color: #293a31;
+  color: #80ddb5;
+}
+
+:root[data-theme="dark"] .employee-sidebar nav a.active,
+:root[data-theme="dark"] .employee-sidebar nav a:hover,
+:root[data-theme="dark"] .client-nav a.active {
+  background-color: #1d3b2e;
+  color: #80ddb5;
+}
+
+:root[data-theme="dark"] .profile-fields input,
+:root[data-theme="dark"] .account-modal input,
+:root[data-theme="dark"] .auth-card input,
+:root[data-theme="dark"] .form-field select,
+:root[data-theme="dark"] .quantity-input,
+:root[data-theme="dark"] .chatbert-composer textarea {
+  background-color: #111a15;
+}
+
+:root[data-theme="dark"] .chatbert-disclaimer,
+:root[data-theme="dark"] .chatbert-response-mode {
+  background-color: #22372b;
+  color: #bdcfc3;
+}
+
+.theme-toggle {
+  width: 35px;
+  height: 35px;
+  flex: 0 0 35px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.theme-toggle:hover { border-color: var(--green); color: var(--green-dark); }
+
+.auth-form-panel { position: relative; }
+.auth-theme-toggle { position: absolute; top: 24px; right: 24px; }
+
+:root[data-theme="dark"] .auth-form-panel { background: #101713; }
+:root[data-theme="dark"] .secondary-button,
+:root[data-theme="dark"] .row-actions button,
+:root[data-theme="dark"] .modal-heading > button,
+:root[data-theme="dark"] .menu-button {
+  background: #18221d;
+  color: #d3ded7;
+}
+
+:root[data-theme="dark"] .ticker-row,
+:root[data-theme="dark"] .mini-list-row,
+:root[data-theme="dark"] .order-mini,
+:root[data-theme="dark"] .data-row:not(.data-head),
+:root[data-theme="dark"] .history-table .data-row:not(.data-head) {
+  background-color: #18221d;
+}
+
+@media (max-width: 520px) {
+  .client-header .theme-toggle { width: 31px; height: 31px; flex-basis: 31px; }
+}

@@ -46,6 +46,16 @@ import AnalyticsChart from "./analytics-chart.component"
     .note { padding: 8px 20px; font-size: 11px; line-height: 1.6; color: #617269; overflow-wrap: anywhere; }
     button { margin: 0 20px 20px; padding: 9px 14px; background: #16835e; color: white; border: 0; border-radius: 6px; cursor: pointer; }
     img { display: block; width: 100%; max-height: 430px; object-fit: contain; }
+    :host-context(html[data-theme="dark"]) section { background: #18221d; border-color: #2b3a32; }
+    :host-context(html[data-theme="dark"]) header { border-color: #2b3a32; }
+    :host-context(html[data-theme="dark"]) h2,
+    :host-context(html[data-theme="dark"]) dd { color: #e2ebe5; }
+    :host-context(html[data-theme="dark"]) header p,
+    :host-context(html[data-theme="dark"]) .status,
+    :host-context(html[data-theme="dark"]) dt,
+    :host-context(html[data-theme="dark"]) .note { color: #a4b2a9; }
+    :host-context(html[data-theme="dark"]) .metrics { background: #141d18; }
+    :host-context(html[data-theme="dark"]) .error { background: #352326; color: #f0a3a6; }
   `],
 })
 export default class AnalyticsCard {

@@ -10,6 +10,7 @@ import {
 import Store, { ClientProfile } from "../../../core/state/portfolio.store"
 import Brand from "../../../shared/brand/brand.component"
 import { TokenStore } from "../../../core/auth/token-store.service"
+import { ThemeService } from "../../../core/theme/theme.service"
 import { BASE_PATH } from "../../../core/api/auth"
 import { catchError, EMPTY, exhaustMap, Subscription, timer } from "rxjs"
 
@@ -24,6 +25,7 @@ import { catchError, EMPTY, exhaustMap, Subscription, timer } from "rxjs"
         <nav class="client-nav" [class.open]="menu">@for (page of clientPages; track page[0]) { <a [routerLink]="['/client', page[0]]" routerLinkActive="active" (click)="menu = false">{{ page[1] }}</a> }</nav>
         <label class="header-search"><input [(ngModel)]="tickerQuery" aria-label="Search ticker or name" placeholder="Search ticker or name" autocomplete="off"><span aria-hidden="true">⌕</span><div class="header-search-results" role="listbox">@if (tickerQuery.trim()) { @for (instrument of tickerMatches; track instrument.ticker) { <a [routerLink]="['/client/ticker', instrument.ticker]" (click)="clearTickerSearch()"><strong>{{ instrument.ticker }}</strong><span>{{ instrument.displayName || '—' }}</span></a> } @empty { <span class="header-search-empty">No matching instruments</span> } }</div></label>
         <div class="token-countdowns" aria-label="Session refresh countdown"><span><small>Refresh</small><strong>{{ refreshPromptOpen() ? 'Now' : formatExpiry(tokenStore.accessSecondsRemaining()) }}</strong></span></div>
+        <button class="theme-toggle" type="button" [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" [attr.title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" (click)="theme.toggle()"><span aria-hidden="true">{{ theme.isDark() ? '☀' : '☾' }}</span></button>
         <div class="client-account"><a class="user-avatar" routerLink="/client/account" aria-label="Open account">{{ store.name.slice(0,2).toUpperCase() }}</a><a routerLink="/client/account">{{ store.name }}</a><button (click)="logout()">Sign out</button></div>
       </header><router-outlet/></div>
     } @else {
@@ -31,7 +33,7 @@ import { catchError, EMPTY, exhaustMap, Subscription, timer } from "rxjs"
         <nav>@for (page of employeePages; track page[0]) { <a [routerLink]="['/', store.session()?.role, page[0]]" routerLinkActive="active" [attr.title]="page[1]">{{ page[1] }}</a> }
         @if (store.session()?.role === 'admin') { <a routerLink="/admin/reporters" routerLinkActive="active">Reporter accounts</a> }</nav>
         <div class="employee-user"><span>{{ store.name }}</span><button (click)="logout()">Sign out</button></div>
-      </aside><div class="employee-main"><header><div><span>Veridian workspace</span><strong>Welcome, {{ store.name }}</strong></div><div class="employee-header-tools"><div class="token-countdowns" aria-label="Session refresh countdown"><span><small>Refresh</small><strong>{{ refreshPromptOpen() ? 'Now' : formatExpiry(tokenStore.accessSecondsRemaining()) }}</strong></span></div><div class="employee-status"><i></i>USD</div></div></header><router-outlet/></div></div>
+      </aside><div class="employee-main"><header><div><span>Veridian workspace</span><strong>Welcome, {{ store.name }}</strong></div><div class="employee-header-tools"><div class="token-countdowns" aria-label="Session refresh countdown"><span><small>Refresh</small><strong>{{ refreshPromptOpen() ? 'Now' : formatExpiry(tokenStore.accessSecondsRemaining()) }}</strong></span></div><button class="theme-toggle" type="button" [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" [attr.title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" (click)="theme.toggle()"><span aria-hidden="true">{{ theme.isDark() ? '☀' : '☾' }}</span></button><div class="employee-status"><i></i>USD</div></div></header><router-outlet/></div></div>
     }
     @if (refreshPromptOpen()) {
       <div class="modal-backdrop session-expiry-backdrop">
@@ -49,6 +51,7 @@ export default class Shell implements OnDestroy {
   store = inject(Store)
   router = inject(Router)
   tokenStore = inject(TokenStore)
+  theme = inject(ThemeService)
   http = inject(HttpClient)
   apiBasePath = inject(BASE_PATH)
   refreshPromptOpen = signal(false)
