@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms"
 import { Router } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
 import { TokenStore } from "../../../core/auth/token-store.service"
+import { ThemeService } from "../../../core/theme/theme.service"
 import { Role } from "../../../core/models/data"
 import Brand from "../../../shared/brand/brand.component"
 import Chart from "../../../shared/charts/price-chart.component"
@@ -35,6 +36,7 @@ import { BASE_PATH } from "../../../core/api/auth"
         </div>
       </section>
       <section class="auth-form-panel">
+        <button class="theme-toggle auth-theme-toggle" type="button" [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" [attr.title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" (click)="theme.toggle()"><span aria-hidden="true">{{ theme.isDark() ? '☀' : '☾' }}</span></button>
         <div class="mobile-brand"><app-brand/></div>
         <form class="auth-card" [formGroup]="authForm" (ngSubmit)="submit()">
           <span class="eyebrow">{{ signup() ? 'Create your account' : 'Welcome back' }}</span>
@@ -74,6 +76,7 @@ export default class Auth {
   private readonly apiBasePath = inject(BASE_PATH)
   private readonly router = inject(Router)
   private readonly tokenStore = inject(TokenStore)
+  readonly theme = inject(ThemeService)
   private readonly store = inject(Store)
 
   roles: Role[] = ["client", "reporter", "admin"]

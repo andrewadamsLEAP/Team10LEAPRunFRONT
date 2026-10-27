@@ -8,6 +8,7 @@ import { routes } from "./app/app.routes"
 import { authInterceptor } from "./app/core/auth/auth.interceptor"
 import { BASE_PATH } from "./app/core/api/auth"
 import ChatbertComponent from "./app/shared/chatbert/chatbert.component"
+import { ThemeService } from "./app/core/theme/theme.service"
 
 
 @Component({
@@ -17,6 +18,7 @@ import ChatbertComponent from "./app/shared/chatbert/chatbert.component"
   template: `<router-outlet/>@if (showChatbert()) { <app-chatbert/> }`,
 })
 export default class App {
+  private readonly theme = inject(ThemeService)
   private readonly router = inject(Router)
   private readonly destroyRef = inject(DestroyRef)
   private readonly currentUrl = signal(this.router.url)

@@ -98,3 +98,42 @@
 .full-button {
   width: 100%;
 }
+
+:host-context(html[data-theme="dark"]) .side-switch {
+  background: #111a15;
+}
+
+:host-context(html[data-theme="dark"]) .side-switch button {
+  color: #a4b2a9;
+}
+
+:host-context(html[data-theme="dark"]) .side-switch button.active.buy {
+  background: #254537;
+  color: #8fe2ba;
+  box-shadow: none;
+}
+
+:host-context(html[data-theme="dark"]) .side-switch button.active.sell {
+  background: #42282c;
+  color: #f0a3a6;
+  box-shadow: none;
+}
+
+:host-context(html[data-theme="dark"]) .quantity-input {
+  background: #111a15;
+  border-color: #35463c;
+  color: #e2ebe5;
+}
+
+:host-context(html[data-theme="dark"]) .quantity-input.static-field {
+  background: #202e26;
+  color: #e2ebe5;
+}
+
+:host-context(html[data-theme="dark"]) .order-details div {
+  color: #a4b2a9;
+}
+
+:host-context(html[data-theme="dark"]) .order-details strong {
+  color: #e2ebe5;
+}

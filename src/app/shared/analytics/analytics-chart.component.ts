@@ -69,6 +69,17 @@ import type { ReportChart } from "../../core/api/analytics-presentation"
     :host(.portfolio-theme) details { margin: 12px 10px 0; color: #d2ecdd; }
     :host(.portfolio-theme) summary { color: #b0d4bf; font-size: 10px; }
     :host(.portfolio-theme) th, :host(.portfolio-theme) td { color: #d2ecdd; border-color: #d4efdf20; }
+    :host-context(html[data-theme="dark"]) .bar-label,
+    :host-context(html[data-theme="dark"]) figcaption,
+    :host-context(html[data-theme="dark"]) .legend li > span:last-child,
+    :host-context(html[data-theme="dark"]) summary,
+    :host-context(html[data-theme="dark"]) th,
+    :host-context(html[data-theme="dark"]) td { color: #c1cdc5; }
+    :host-context(html[data-theme="dark"]) .bar-track { background: #293a31; }
+    :host-context(html[data-theme="dark"]) .grid,
+    :host-context(html[data-theme="dark"]) th,
+    :host-context(html[data-theme="dark"]) td { border-color: #2b3a32; }
+    :host-context(html[data-theme="dark"]) circle { fill: #18221d; }
   `],
 })
 export default class AnalyticsChart {

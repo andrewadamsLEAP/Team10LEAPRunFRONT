@@ -37,6 +37,13 @@ import type { AnalyticsValue } from "../../core/api/analytics-api.service"
     dt { font-size: 11px; color: #617269; margin-bottom: 6px; }
     dd { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.6; overflow-wrap: anywhere; }
     .empty { padding: 16px; font-size: 12px; color: #617269; }
+    :host-context(html[data-theme="dark"]) th { background: #202e26; color: #c1cdc5; }
+    :host-context(html[data-theme="dark"]) td,
+    :host-context(html[data-theme="dark"]) dt,
+    :host-context(html[data-theme="dark"]) .empty { color: #a4b2a9; }
+    :host-context(html[data-theme="dark"]) th,
+    :host-context(html[data-theme="dark"]) td { border-color: #2b3a32; }
+    :host-context(html[data-theme="dark"]) dd { color: #e2ebe5; }
   `],
 })
 export default class AnalyticsValueComponent {
