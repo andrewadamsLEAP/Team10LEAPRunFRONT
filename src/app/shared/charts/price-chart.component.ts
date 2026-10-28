@@ -20,7 +20,7 @@ export default class Chart implements OnChanges, OnDestroy {
   @Input() flat = false
   @Input() period = "1M"
   @Input() ticker = ""
-  points = "0,120 700,120"
+  @Input() points = "0,120 700,120"
 
   ngOnChanges(changes: SimpleChanges) {
     if ((changes["ticker"] || changes["period"]) && this.ticker) {

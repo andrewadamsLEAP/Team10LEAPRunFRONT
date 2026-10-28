@@ -31,7 +31,7 @@ import { BASE_PATH } from "../../../core/api/auth"
             <span>BTC-USD <em>+2.64%</em></span>
             <span>EUR-USD <em>+0.28%</em></span>
           </div>
-          <app-chart/>
+          <app-chart points="0,188 35,150 70,162 105,124 140,136 175,96 210,120 245,92 280,70 315,102 350,86 385,116 420,94 455,106 490,58 525,80 560,70 595,98 630,56 665,36 700,14"/>
           <ul class="login-tickers" aria-label="Featured companies">
             <li><img src="assets/tickers/apple.png" alt="Apple" width="32" height="32"><span>AAPL</span></li>
             <li><img src="assets/tickers/amazon.png" alt="Amazon" width="32" height="32"><span>AMZN</span></li>
