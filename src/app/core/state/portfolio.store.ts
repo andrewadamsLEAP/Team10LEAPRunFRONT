@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http"
 import { inject, Injectable, signal } from "@angular/core"
 import { map, tap } from "rxjs"
-import { EMPTY, Subscription, catchError, interval, startWith, switchMap } from "rxjs"
+import { EMPTY, Subscription, catchError, exhaustMap, interval, startWith, timeout } from "rxjs"
 import {
   Account,
   Asset,
@@ -150,7 +150,7 @@ export default class Store {
   loadInstruments() {
     this.instrumentLoading.set(true)
     this.instrumentError.set(null)
-    this.marketDataService.getInstruments().subscribe({
+    this.marketDataService.getInstruments().pipe(timeout(15_000)).subscribe({
       next: (instruments) => {
         this.applyInstrumentPrices(instruments)
         this.instruments.set(instruments)
@@ -167,15 +167,24 @@ export default class Store {
     this.marketPolling = interval(5_000)
       .pipe(
         startWith(0),
-        switchMap(() =>
+        exhaustMap(() =>
           this.marketDataService
             .getInstruments()
-            .pipe(catchError(() => EMPTY)),
+            .pipe(
+              timeout(15_000),
+              catchError(() => {
+                this.instrumentError.set("Unable to refresh market prices. Displayed quotes may be out of date; retrying automatically.")
+                this.instrumentLoading.set(false)
+                return EMPTY
+              }),
+            ),
         ),
       )
       .subscribe((instruments) => {
         this.applyInstrumentPrices(instruments)
         this.instruments.set(instruments)
+        this.instrumentError.set(null)
+        this.instrumentLoading.set(false)
       })
   }
   priceChanged(symbol: string) {

@@ -1,16 +1,18 @@
 import { Component, computed, inject, OnInit, signal } from "@angular/core"
-import { CurrencyPipe, DecimalPipe } from "@angular/common"
+import { CurrencyPipe, DatePipe, DecimalPipe } from "@angular/common"
 import { RouterLink } from "@angular/router"
 import { OrdersApiService } from "../../../core/api/orders-api.service"
 import { TokenStore } from "../../../core/auth/token-store.service"
 import Store from "../../../core/state/portfolio.store"
 import PortfolioValueComponent from "../../../shared/charts/portfolio-value.component"
 import { Instrument } from "../../../core/models/data"
+import { marketPrice } from "../../../core/models/market-price"
+import NewsFeedComponent from "../../news/news-feed.component"
 
 @Component({
   selector: "app-dashboard-page",
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, RouterLink, PortfolioValueComponent],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, PortfolioValueComponent, NewsFeedComponent],
   template: `
     <div class="page-wrap">
       <div class="page-intro"><div><span class="eyebrow">Client dashboard</span><h1>Good morning, {{ store.name }}</h1><p>Here is what is happening with your portfolio today.</p></div></div>
@@ -29,9 +31,10 @@ import { Instrument } from "../../../core/models/data"
         @if (ordersLoading()) { <p class="empty-state">Loading recent orders...</p> }
         @else if (ordersError()) { <p class="empty-state" role="alert">{{ ordersError() }}</p> }
         @else {
-          @for (o of recentOrders(); track o.id) { <div class="order-mini"><span><b>{{ o.type }} {{ o.ticker }}</b><small>{{ o.date }}</small></span><em [class]="'status ' + o.status.toLowerCase()">{{ o.status }}</em></div> } @empty { <p class="empty-state">No orders yet.</p> }
+          @for (o of recentOrders(); track o.id) { <div class="order-mini"><span><b>{{ o.type }} {{ o.ticker }}</b><small>{{ o.date ? (o.date | date:'MMM d, y, h:mm a') : '—' }}</small></span><em [class]="'status ' + o.status.toLowerCase()">{{ o.status }}</em></div> } @empty { <p class="empty-state">No orders yet.</p> }
         }
       </section></aside></div>
+      <app-news-feed class="dashboard-news" [preview]="true" />
     </div>`,
 })
 export default class DashboardPage implements OnInit {
@@ -42,7 +45,7 @@ export default class DashboardPage implements OnInit {
     id: string
     type: string
     ticker: string
-    date: string
+    date: Date | null
     status: string
   }[]>([])
   readonly ordersLoading = signal(false)
@@ -60,14 +63,19 @@ export default class DashboardPage implements OnInit {
       next: (records) => {
         this.recentOrders.set(
           records.map((record, index) => {
-            const date = record.createdAt ?? record.orderDate ?? record.order_date ?? "—"
-            const timestamp = Date.parse(date.replace(" ", "T"))
+            const dateValue = record.createdAt ?? record.orderDate ?? record.order_date ?? ""
+            const normalizedDate = dateValue.replace(
+              /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)(?!Z|[+-]\d{2}:?\d{2})$/,
+              "$1T$2",
+            )
+            const parsedDate = new Date(normalizedDate)
+            const timestamp = parsedDate.getTime()
             return {
               id: String(record.orderId ?? record.order_id ?? index),
               type: record.orderType ?? record.order_type ?? "—",
               ticker: record.ticker ?? "—",
               status: record.status ?? record.orderStatus ?? record.order_status ?? "—",
-              date,
+              date: Number.isNaN(timestamp) ? null : parsedDate,
               timestamp: Number.isNaN(timestamp) ? 0 : timestamp,
             }
           })
@@ -95,10 +103,7 @@ export default class DashboardPage implements OnInit {
   }
 
   currentPrice(instrument: Instrument) {
-    if (instrument.bidPrice !== null && instrument.askPrice !== null) {
-      return (instrument.bidPrice + instrument.askPrice) / 2
-    }
-    return instrument.bidPrice ?? instrument.askPrice
+    return marketPrice(instrument)
   }
 
   positionValue(symbol: string, quantity: number) {

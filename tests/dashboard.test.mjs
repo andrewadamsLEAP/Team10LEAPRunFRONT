@@ -42,9 +42,12 @@ const records = [2, 6, 1, 4, 3, 7, 5].map((day) => ({
   status: "Fulfilled",
   createdAt: `2026-10-${String(day).padStart(2, "0")}T12:00:00Z`,
 }))
+records[5].createdAt = "2026-10-07T12:00:00.395244Z"
 const { page, requestedIds } = dashboard(records)
 assert.deepEqual(requestedIds, [47])
 assert.deepEqual(page.recentOrders().map((order) => order.id), ["7", "6", "5", "4", "3"])
+assert.ok(page.recentOrders()[0].date instanceof Date)
+assert.equal(page.recentOrders()[0].date.getMilliseconds(), 395)
 assert.deepEqual(records.map((record) => record.orderId), [2, 6, 1, 4, 3, 7, 5])
 for (const count of [0, 1, 3, 5]) {
   assert.equal(dashboard(records.slice(0, count)).page.recentOrders().length, count)
@@ -59,6 +62,8 @@ assert.deepEqual(aliases.map((order) => order.id), ["2", "1", "3"])
 assert.equal(aliases[1].type, "Sell")
 assert.equal(aliases[1].status, "Cancelled")
 assert.equal(aliases[1].ticker, "MSFT")
+assert.ok(aliases[0].date instanceof Date)
+assert.equal(aliases[2].date, null)
 
 for (const subject of [null, "invalid", "0", "-1", "1.5"]) {
   const result = dashboard([], subject)

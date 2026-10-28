@@ -56,7 +56,11 @@ try {
   const componentUrl = await compile(
     new URL("shared/chatbert/chatbert.component.ts", root),
     "chatbert.component.mjs",
-    [["../../core/api/chat.service", "./chat.service.mjs"]],
+    [
+      ["../../core/api/chat.service", "./chat.service.mjs"],
+      // This logic-only injector has no application render manager.
+      ["afterEveryRender({", "((callback) => { globalThis.chatbertAfterRender = callback })({"],
+    ],
   )
 
   const { BASE_PATH } = await import(variablesUrl)
@@ -232,7 +236,36 @@ try {
   serviceInjector.destroy()
   interceptorInjector.destroy()
   componentInjector.destroy()
-  console.log("Passed: Chatbert API contract, public interceptor opt-out, validation, FAQ/Gemini display, retries, cooldowns, and text-only rendering.")
+  const list = { scrollTop: 0, scrollHeight: 500 }
+  component.messageList = { nativeElement: list }
+  globalThis.chatbertAfterRender.write()
+  assert.equal(list.scrollTop, 500, "The registered post-render callback scrolls the rendered message list")
+  component.scrollToLatest()
+  assert.equal(list.scrollTop, 500, "Opening the chat scrolls to the latest message")
+  list.scrollTop = 100
+  component.scrollToLatest()
+  assert.equal(list.scrollTop, 100, "Unrelated renders must not interrupt reading older messages")
+  component.messages.push({ role: "user", text: "Another question" })
+  list.scrollHeight = 600
+  component.scrollToLatest()
+  assert.equal(list.scrollTop, 600, "A new user message scrolls after rendering")
+  component.messages.push({ role: "assistant", text: "Another reply" })
+  list.scrollHeight = 800
+  component.scrollToLatest()
+  assert.equal(list.scrollTop, 800, "A new assistant message scrolls after rendering")
+  list.scrollTop = 100
+  component.pending.set(!component.pending())
+  component.scrollToLatest()
+  assert.equal(list.scrollTop, 800, "Pending indicator changes scroll into view")
+  component.messageList = undefined
+  component.scrollToLatest()
+  component.messageList = { nativeElement: list }
+  list.scrollTop = 0
+  component.scrollToLatest()
+  assert.equal(list.scrollTop, 800, "Reopening the chat restores the latest messages")
+
+  console.log("Passed: Chatbert API contract, public interceptor opt-out, validation, FAQ/Gemini display, retries, cooldowns, text-only rendering, and message auto-scroll.")
 } finally {
+  delete globalThis.chatbertAfterRender
   await rm(temporary, { recursive: true, force: true })
 }

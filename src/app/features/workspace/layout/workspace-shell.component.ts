@@ -66,6 +66,7 @@ export default class Shell implements OnDestroy {
   clientPages = [
     ["home", "Overview"],
     ["markets", "Markets"],
+    ["news", "News"],
     ["holdings", "Holdings"],
     ["orders", "Orders"],
     ["transactions", "Transactions"],

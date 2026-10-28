@@ -38,7 +38,7 @@ type TransactionRow = {
         <div class="data-table transaction-table" [class.employee-transactions]="!client"><div class="data-row data-head"><span>Transaction ID</span>@if (!client) { <span>Client</span> }<span>Type</span><span>Amount</span>@if (client) { <span>Status</span> }<span>Date &amp; time</span></div>
           @if (employee && loading()) { <p class="empty-state" role="status">Loading transactions…</p> }
           @else if (employee && loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
-          @else { @for (t of transactions; track t.id) { <div class="data-row"><strong>{{ t.id }}</strong>@if (!client) { <span>{{ t.client }}</span> }<span>{{ t.type }}</span><strong [class]="t.amount >= 0 ? 'positive' : 'negative'">{{ t.amount | currency:'USD' }}</strong>@if (client) { <span [class]="'status ' + (t.status || '').toLowerCase()">{{ t.status }}</span> }<span>{{ admin ? formatTimestamp(t.date) : t.date }}</span></div> } @empty { <p class="empty-state">No transactions yet.</p> } }
+          @else { @for (t of transactions; track t.id) { <div class="data-row"><strong>{{ t.id }}</strong>@if (!client) { <span>{{ t.client }}</span> }<span>{{ t.type }}</span><strong [class]="t.amount >= 0 ? 'positive' : 'negative'">{{ t.amount | currency:'USD' }}</strong>@if (client) { <span [class]="'status ' + (t.status || '').toLowerCase()">{{ t.status }}</span> }<span>{{ formatTimestamp(t.date) }}</span></div> } @empty { <p class="empty-state">No transactions yet.</p> } }
         </div>
       </section>
     </div>`,
@@ -98,7 +98,14 @@ export default class TransactionsPage implements OnInit {
   }
 
   formatTimestamp(value: string) {
-    return new DatePipe("en-US").transform(value, "medium") ?? value
+    if (!value || value === "—") return value
+    const normalized = value.replace(
+      /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)(?!Z|[+-]\d{2}:?\d{2})$/,
+      "$1T$2",
+    )
+    const date = new Date(normalized)
+    if (Number.isNaN(date.getTime())) return value
+    return new DatePipe("en-US").transform(date, "medium") ?? value
   }
   fundType: "Deposit" | "Withdrawal" = "Deposit"
   amount = 0

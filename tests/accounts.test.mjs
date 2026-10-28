@@ -4,6 +4,8 @@ import { join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import ts from "typescript"
 import "@angular/compiler"
+import { DatePipe } from "@angular/common"
+import { signal } from "@angular/core"
 import { of } from "rxjs"
 
 const backendTransactions = [
@@ -184,6 +186,35 @@ try {
     () => store.saveAccount("clients", { ...store.clients()[0], id: 100 }),
     /already exists/,
   )
+  const transactionSource = await readFile(
+    new URL("../src/app/features/transactions/pages/transactions.page.ts", import.meta.url),
+    "utf8",
+  )
+  assert.match(transactionSource, /\{\{ formatTimestamp\(t\.date\) \}\}/)
+  assert.doesNotMatch(transactionSource, /admin\s*\?\s*formatTimestamp/)
+  const transactionModule = ts.transpileModule(
+    transactionSource.slice(transactionSource.indexOf("export default class")).replace("export default ", ""),
+    { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } },
+  )
+  const TransactionsPage = new Function(
+    "inject", "Store", "HttpClient", "BASE_PATH", "signal", "DatePipe",
+    `${transactionModule.outputText}\nreturn TransactionsPage`,
+  )(() => ({}), "store", "http", "base", signal, DatePipe)
+  const transactionPage = new TransactionsPage()
+  for (const role of ["client", "reporter", "admin"]) {
+    transactionPage.store = { session: () => ({ role }) }
+    for (const value of ["2026-10-22T21:50:00.58554Z", "2026-10-22T21:50:00+05:30"]) {
+      assert.equal(transactionPage.formatTimestamp(value), new DatePipe("en-US").transform(new Date(value), "medium"))
+      assert.match(transactionPage.formatTimestamp(value), /[AP]M/)
+    }
+    assert.equal(
+      transactionPage.formatTimestamp("2026-10-22 13:13:45"),
+      new DatePipe("en-US").transform(new Date("2026-10-22T13:13:45"), "medium"),
+    )
+    for (const value of ["", "—", "not-a-date"]) assert.equal(transactionPage.formatTimestamp(value), value)
+  }
+  const themeSource = await readFile(new URL("../src/styles/_theme.css", import.meta.url), "utf8")
+  assert.match(themeSource, /:root\[data-theme="dark"\] \.side-tag\.sell,[^{]+\{\s*background-color: #42282c;\s*color: #e89aa0;/)
   console.log(
     "Passed: client isolation, identity, cash validation, trading, timestamps, and admin mutation restrictions.",
   )

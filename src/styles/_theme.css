@@ -196,6 +196,7 @@
   color: #e5c16c;
 }
 
+:root[data-theme="dark"] .side-tag.sell,
 :root[data-theme="dark"] .status.cancelled,
 :root[data-theme="dark"] .status.suspended,
 :root[data-theme="dark"] .history-status.cancelled,

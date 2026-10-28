@@ -7,6 +7,7 @@ import { toSignal } from "@angular/core/rxjs-interop"
 import Store from "../../../core/state/portfolio.store"
 import Chart from "../../../shared/charts/price-history-chart.component"
 import { Instrument, Side } from "../../../core/models/data"
+import { marketPrice } from "../../../core/models/market-price"
 
 @Component({
   selector: "app-ticker-detail-page",
@@ -37,7 +38,7 @@ import { Instrument, Side } from "../../../core/models/data"
               {{ currentPrice(a) | currency:'USD':'symbol':(a.assetType === 'FOREX' ? '1.4-4' : '1.2-2') }}
             </strong>
             <em [class]="(a.changePercent ?? 0) >= 0 ? 'positive' : 'negative'">
-              {{ a.changePercent == null ? '—' : (a.changePercent | number:'1.2-2') }}% today
+              {{ a.changePercent == null ? 'Daily change unavailable' : (a.changePercent | number:'1.2-2') + '% vs previous close' }}
             </em>
           </div>
 
@@ -144,7 +145,7 @@ export default class TickerDetailPage {
   }
 
   currentPrice(instrument: Instrument) {
-    return instrument.bidPrice ?? instrument.askPrice
+    return marketPrice(instrument)
   }
 
   start(side: Side) {
