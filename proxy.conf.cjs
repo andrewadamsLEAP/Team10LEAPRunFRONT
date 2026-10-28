@@ -10,7 +10,7 @@ module.exports = [
   },
   {
     context: ["/api/v1"],
-    target: "http://localhost:8085",
+    target: "http://localhost:8080",
     secure: false,
     changeOrigin: true,
   },
