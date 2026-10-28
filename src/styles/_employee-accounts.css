@@ -8,9 +8,9 @@
 .employee-sidebar nav button { height: 40px; padding: 0 11px; border: 0; border-radius: 6px; background: transparent; color: #68766e; display: flex; align-items: center; gap: 9px; text-align: left; font-size: 10px; cursor: pointer; }
 .employee-sidebar nav button.active, .employee-sidebar nav button:hover { background: var(--green-soft); color: var(--green-dark); }
 .employee-user { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
-.employee-user > span { display: flex; flex-direction: column; gap: 2px; font-size: 9px; }
+.employee-user > span { display: flex; flex-direction: column; gap: 2px; font-family: inherit; font-size: 11px; font-weight: 400; line-height: 1.4; }
 .employee-user small { color: #87938d; text-transform: capitalize; font-size: 7px; }
-.employee-user > button { margin-left: auto; border: 0; background: transparent; color: #829088; cursor: pointer; }
+.employee-user > button { margin-left: auto; padding: 6px 8px; border: 0; background: transparent; color: #829088; font-family: inherit; font-size: 11px; font-weight: 400; line-height: 1.4; white-space: nowrap; cursor: pointer; }
 .employee-main { width: calc(100% - 226px); margin-left: 226px; }
 .employee-main > header { height: 65px; padding: 0 28px; border-bottom: 1px solid var(--line); background: white; display: flex; align-items: center; justify-content: space-between; }
 .employee-main > header > div:first-child { display: flex; flex-direction: column; gap: 3px; }
@@ -52,4 +52,3 @@
 .breakdown > i b { display: block; height: 100%; background: var(--green); border-radius: inherit; }
 .toast { position: fixed; z-index: 30; top: 16px; left: 50%; transform: translateX(-50%); padding: 11px 15px; border: 1px solid #a4d3c0; border-radius: 6px; background: white; box-shadow: 0 12px 35px #143b2b25; color: #1b684c; font-size: 10px; display: flex; align-items: center; gap: 7px; animation: enter .2s ease-out; }
 @keyframes enter { from { opacity: 0; transform: translate(-50%, -8px); } }
-

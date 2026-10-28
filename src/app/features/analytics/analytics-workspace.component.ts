@@ -136,11 +136,10 @@ export default class AnalyticsWorkspace implements OnInit {
     const allocation = this.api.getClientAllocation().pipe(shareReplay({ bufferSize: 1, refCount: true }))
     const statuses = this.api.getClientOrderStatus(days).pipe(shareReplay({ bufferSize: 1, refCount: true }))
     return [
-      { id: "gainers", title: "Top 5 holdings by profit", description: "Highest unrealized profit first (up to five). Missing price or cost-basis data is disclosed, not estimated.", request: this.api.getClientTopGainers() },
+      { id: "gainers", title: "Top holdings by profit", description: "Highest unrealized profit first (up to five). Missing price or cost-basis data is disclosed, not estimated.", request: this.api.getClientTopGainers() },
       { id: "allocation", title: "Portfolio allocation", description: "Current market value by category, including any unpriced ticker warnings.", request: allocation },
       { id: "allocation-chart", title: "Allocation percentages", description: "Stock, crypto, bitcoin, and other assets by priced market value. Bitcoin is not counted again as crypto; cash is excluded.", request: allocation },
       { id: "order-status", title: "Order status", description: `Your fulfilled, pending, and cancelled orders over the last ${days} days.`, request: statuses },
-      { id: "orders-chart", title: "Order status chart", description: `Your order counts over the last ${days} days, from the same order-status response.`, request: statuses },
     ]
   }
 

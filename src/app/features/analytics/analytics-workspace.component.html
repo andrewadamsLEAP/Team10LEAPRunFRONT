@@ -4,7 +4,6 @@
       <h1>{{ audience() === 'client' ? 'Your analytics' : 'Platform analytics' }}</h1>
       <p>{{ audience() === 'client' ? 'Understand your holdings, portfolio allocation, and order activity.' : 'Explore client activity, trading performance, and filtered order reports.' }}</p>
     </div>
-    <span class="source-badge">Python analytics</span>
   </div>
 
   <form class="report-filters" (ngSubmit)="refresh()">
