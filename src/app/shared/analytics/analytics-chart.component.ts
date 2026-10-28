@@ -1,9 +1,11 @@
 import { Component, computed, input } from "@angular/core"
 import type { ReportChart } from "../../core/api/analytics-presentation"
+import { TableSort, SortColumn } from "../sorting/table-sort"
 
 @Component({
   selector: "app-analytics-chart",
   standalone: true,
+  imports: [TableSort, SortColumn],
   host: { "[class.portfolio-theme]": "appearance() === 'portfolio'" },
   template: `
     <figure>
@@ -36,8 +38,8 @@ import type { ReportChart } from "../../core/api/analytics-presentation"
           }
         </svg>
         <figcaption><span>{{ axisLabel(chart().labels[0]) }}</span><span>{{ axisLabel(chart().labels[chart().labels.length - 1]) }}</span></figcaption>
-        <details><summary>View chart values</summary><table><thead><tr><th>Time / period</th><th>Value</th></tr></thead>
-          <tbody>@for (point of points(); track $index) { <tr><td>{{ point.label }}</td><td>{{ format(point.value) }}</td></tr> }</tbody></table></details>
+        <details><summary>View chart values</summary><table appSortTable #sort="appSortTable"><thead><tr><th appSortColumn="label" sortLabel="Time or period" [sortKind]="chart().timeBased ? 'date' : 'auto'">Time / period</th><th appSortColumn="value" sortLabel="Value">Value</th></tr></thead>
+          <tbody>@for (point of sort.rows(points()); track point.index) { <tr><td>{{ point.label }}</td><td>{{ format(point.value) }}</td></tr> }</tbody></table></details>
       }
     </figure>
   `,

@@ -7,12 +7,13 @@ import Store from "../../../core/state/portfolio.store"
 import PortfolioValueComponent from "../../../shared/charts/portfolio-value.component"
 import { Instrument } from "../../../core/models/data"
 import { marketPrice } from "../../../core/models/market-price"
+import { TableSort, SortColumn } from "../../../shared/sorting/table-sort"
 import NewsFeedComponent from "../../news/news-feed.component"
 
 @Component({
   selector: "app-dashboard-page",
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, PortfolioValueComponent, NewsFeedComponent],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, PortfolioValueComponent, NewsFeedComponent, TableSort, SortColumn],
   template: `
     <div class="page-wrap">
       <div class="page-intro"><div><span class="eyebrow">Client dashboard</span><h1>Good morning, {{ store.name }}</h1><p>Here is what is happening with your portfolio today.</p></div></div>
@@ -21,8 +22,8 @@ import NewsFeedComponent from "../../news/news-feed.component"
         @if (store.instrumentLoading()) { <p class="empty-state" role="status">Loading trending tickers...</p> }
         @else if (store.instrumentError(); as error) { <p class="empty-state" role="alert">{{ error }} <button class="secondary-button" (click)="store.loadInstruments()">Retry</button></p> }
         @else {
-        <div class="ticker-table"><div class="ticker-row ticker-head"><span>Asset</span><span>Market</span><span>Price</span><span>Today</span><span>Volume</span><span></span></div>
-          @for (a of trending(); track a.ticker) { <a class="ticker-row" [routerLink]="['/client/ticker', a.ticker]"><span class="ticker-name"><i>{{ a.ticker[0] }}</i><b>{{ a.ticker }}<small>{{ a.displayName || '—' }}</small></b></span><span>{{ a.assetType === 'STOCK' ? 'Stock' : a.assetType === 'CRYPTO' ? 'Crypto' : 'Forex' }}</span><strong>{{ currentPrice(a) | currency:'USD':'symbol':(a.assetType === 'FOREX' ? '1.4-4' : '1.2-2') }}</strong><span [class]="a.changePercent! >= 0 ? 'positive' : 'negative'">{{ a.changePercent! > 0 ? '+' : '' }}{{ a.changePercent | number:'1.2-2' }}%</span><span>{{ a.volume == null ? '—' : (a.volume | number:'1.0-0') }}</span><span>›</span></a> } @empty { <p class="empty-state">No daily price changes available yet.</p> }
+        <div class="ticker-table" appSortTable #sort="appSortTable"><div class="ticker-row ticker-head"><span appSortColumn="ticker" sortLabel="Asset">Asset</span><span appSortColumn="assetType" sortLabel="Market">Market</span><span appSortColumn="price" sortLabel="Price">Price</span><span appSortColumn="changePercent" sortLabel="Today">Today</span><span appSortColumn="volume" sortLabel="Volume">Volume</span><span></span></div>
+          @for (a of sort.rows(trending(), sortValues); track a.ticker) { <a class="ticker-row" [routerLink]="['/client/ticker', a.ticker]"><span class="ticker-name"><i>{{ a.ticker[0] }}</i><b>{{ a.ticker }}<small>{{ a.displayName || '—' }}</small></b></span><span>{{ a.assetType === 'STOCK' ? 'Stock' : a.assetType === 'CRYPTO' ? 'Crypto' : 'Forex' }}</span><strong>{{ currentPrice(a) | currency:'USD':'symbol':(a.assetType === 'FOREX' ? '1.4-4' : '1.2-2') }}</strong><span [class]="a.changePercent! >= 0 ? 'positive' : 'negative'">{{ a.changePercent! > 0 ? '+' : '' }}{{ a.changePercent | number:'1.2-2' }}%</span><span>{{ a.volume == null ? '—' : (a.volume | number:'1.0-0') }}</span><span>›</span></a> } @empty { <p class="empty-state">No daily price changes available yet.</p> }
         </div>
         }
       </section><aside class="home-sidebar"><section class="surface"><div class="section-title small"><div><span class="eyebrow">Portfolio</span><h2>Top holdings</h2></div><a routerLink="/client/holdings">View all</a></div>
@@ -38,6 +39,7 @@ import NewsFeedComponent from "../../news/news-feed.component"
     </div>`,
 })
 export default class DashboardPage implements OnInit {
+  readonly sortValues = { price: (instrument: Instrument) => this.currentPrice(instrument) }
   store = inject(Store)
   private readonly ordersApi = inject(OrdersApiService)
   private readonly tokenStore = inject(TokenStore)

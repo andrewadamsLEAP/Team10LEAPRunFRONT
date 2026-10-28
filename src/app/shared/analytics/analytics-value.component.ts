@@ -1,15 +1,17 @@
 import { Component, input } from "@angular/core"
 import type { AnalyticsValue } from "../../core/api/analytics-api.service"
+import { TableSort, SortColumn } from "../sorting/table-sort"
 
 @Component({
   selector: "app-analytics-value",
   standalone: true,
+  imports: [TableSort, SortColumn],
   template: `
     @if (rows(); as records) {
       @if (records.length) {
         <div class="table-scroll" tabindex="0" role="region" aria-label="Analytics report data">
-          <table><thead><tr>@for (key of columns(records); track key) { <th>{{ label(key) }}</th> }</tr></thead>
-            <tbody>@for (row of records; track $index) { <tr>@for (key of columns(records); track key) {
+          <table appSortTable #sort="appSortTable"><thead><tr>@for (key of columns(records); track key) { <th [appSortColumn]="key" [sortLabel]="label(key)" [sortKind]="isDateColumn(key) ? 'date' : 'auto'">{{ label(key) }}</th> }</tr></thead>
+            <tbody>@for (row of sort.rows(records); track $index) { <tr>@for (key of columns(records); track key) {
               <td>@if (isNested(row[key])) { <app-analytics-value [value]="row[key]" /> }
                 @else { {{ display(row[key], key) }} }</td>
             }</tr> }</tbody>
@@ -48,6 +50,7 @@ import type { AnalyticsValue } from "../../core/api/analytics-api.service"
 })
 export default class AnalyticsValueComponent {
   value = input<AnalyticsValue>(null)
+  isDateColumn(key: string) { return /(^|_)(date|timestamp|created_at|updated_at|period)$/.test(key) }
   label(key: string) { return key.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) }
   isNested(value: AnalyticsValue | undefined) { return value !== null && typeof value === "object" }
   display(value: AnalyticsValue | undefined, key = ""): string {

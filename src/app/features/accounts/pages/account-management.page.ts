@@ -6,6 +6,7 @@ import { ActivatedRoute, RouterLink } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
 import { Account } from "../../../core/models/data"
 import { BASE_PATH } from "../../../core/api/auth"
+import { TableSort, SortColumn } from "../../../shared/sorting/table-sort"
 
 type ReporterApiRecord = {
   employeeId?: number | string
@@ -42,13 +43,13 @@ type AccountDraft = Account & {
 @Component({
   selector: "app-account-management-page",
   standalone: true,
-  imports: [CurrencyPipe, FormsModule, RouterLink],
+  imports: [CurrencyPipe, FormsModule, RouterLink, TableSort, SortColumn],
   template: `
     <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">Account management</span><h1>{{ reporters ? 'Reporter accounts' : 'Client accounts' }}</h1><p>{{ reporters ? 'Reporter account directory.' : 'Create, edit, and manage account access.' }}</p></div>@if (reporters) { <button class="primary-button" (click)="create()">Add account</button> }</div>
-      <section class="surface data-surface"><div class="data-table accounts-table admin" [class.reporter-accounts]="reporters"><div class="data-row data-head"><span>Username</span>@if (reporters) { <span>Full name</span><span>Email</span><span>Role</span> } @else { <span>First name</span><span>Last name</span><span>Cash</span><span>Actions</span> }</div>
+      <section class="surface data-surface"><div class="data-table accounts-table admin" [class.reporter-accounts]="reporters" appSortTable #sort="appSortTable"><div class="data-row data-head"><span appSortColumn="username" sortLabel="Username">Username</span>@if (reporters) { <span appSortColumn="fullName" sortLabel="Full name">Full name</span><span appSortColumn="email" sortLabel="Email">Email</span><span appSortColumn="role" sortLabel="Role">Role</span> } @else { <span appSortColumn="firstName" sortLabel="First name">First name</span><span appSortColumn="lastName" sortLabel="Last name">Last name</span><span appSortColumn="cash" sortLabel="Cash">Cash</span><span>Actions</span> }</div>
         @if (loading()) { <p class="empty-state" role="status">Loading {{ reporters ? 'reporter' : 'client' }} accounts…</p> }
         @else if (loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
-        @else { @for (a of accounts; track a.id) { <div class="data-row">@if (reporters) { <strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span><span>{{ a.email || '—' }}</span><span>{{ a.role || '—' }}</span> } @else { <a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']"><strong>{{ a.username }}</strong></a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.firstName || '—' }}</a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.lastName || '—' }}</a><span>{{ a.cash | currency:'USD' }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button class="danger" (click)="remove(a)">Delete</button></div> }</div> } @empty { <p class="empty-state">No accounts yet.</p> } }
+        @else { @for (a of sort.rows(accounts); track a.id) { <div class="data-row">@if (reporters) { <strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span><span>{{ a.email || '—' }}</span><span>{{ a.role || '—' }}</span> } @else { <a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']"><strong>{{ a.username }}</strong></a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.firstName || '—' }}</a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.lastName || '—' }}</a><span>{{ a.cash | currency:'USD' }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button class="danger" (click)="remove(a)">Delete</button></div> }</div> } @empty { <p class="empty-state">No accounts yet.</p> } }
       </div></section>
     </div>
     @if (draft; as d) {

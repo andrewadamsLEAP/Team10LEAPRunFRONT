@@ -48,3 +48,8 @@
 .holding-name small { color: #89958f; font-size: 8px; font-weight: 400; }
 .allocation-bar { display: block; width: 75px; height: 5px; border-radius: 5px; background: #e6ece9; overflow: hidden; }
 .allocation-bar b { display: block; height: 100%; border-radius: inherit; background: var(--green); }
+.sortable-column { cursor: pointer; user-select: none; }
+.sortable-column::after { content: " \2195"; opacity: .5; font-size: .9em; }
+.sortable-column[aria-sort="ascending"]::after { content: " \2191"; opacity: 1; }
+.sortable-column[aria-sort="descending"]::after { content: " \2193"; opacity: 1; }
+.sortable-column:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }

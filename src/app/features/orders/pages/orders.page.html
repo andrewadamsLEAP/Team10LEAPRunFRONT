@@ -13,18 +13,18 @@
     }
   </div>
   <section class="surface data-surface">
-    <div class="data-table order-table" [class.with-client]="!client">
+    <div class="data-table order-table" [class.with-client]="!client" appSortTable #sort="appSortTable">
       <div class="data-row data-head">
-        <span>Order ID</span>
-        @if (!client) { <span>Client</span> }
-        <span>Ticker</span><span>Side</span><span>Status</span><span>Price</span><span>Quantity</span><span>Date &amp; time</span>
+        <span appSortColumn="id" sortLabel="Order ID">Order ID</span>
+        @if (!client) { <span appSortColumn="client" sortLabel="Client">Client</span> }
+        <span appSortColumn="ticker" sortLabel="Ticker">Ticker</span><span appSortColumn="type" sortLabel="Side">Side</span><span appSortColumn="status" sortLabel="Status">Status</span><span appSortColumn="price" sortLabel="Price">Price</span><span appSortColumn="quantity" sortLabel="Quantity">Quantity</span><span appSortColumn="date" sortKind="date" sortLabel="Date and time">Date &amp; time</span>
       </div>
       @if (loading()) {
         <p class="empty-state" role="status">Loading orders…</p>
       } @else if (loadError()) {
         <p class="empty-state" role="alert">{{ loadError() }}</p>
       } @else {
-        @for (o of orders; track o.id) {
+        @for (o of sort.rows(orders); track o.id) {
           <div class="data-row">
             <strong>{{ o.id }}</strong>
             @if (!client) { <span>{{ o.client }}</span> }

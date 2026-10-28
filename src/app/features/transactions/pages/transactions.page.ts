@@ -4,6 +4,7 @@ import { HttpClient } from "@angular/common/http"
 import { FormsModule } from "@angular/forms"
 import Store from "../../../core/state/portfolio.store"
 import { BASE_PATH } from "../../../core/api/auth"
+import { TableSort, SortColumn } from "../../../shared/sorting/table-sort"
 
 type AdminTransactionRecord = {
   transactionId?: number | string | null
@@ -27,7 +28,7 @@ type TransactionRow = {
 @Component({
   selector: "app-transactions-page",
   standalone: true,
-  imports: [CurrencyPipe, FormsModule],
+  imports: [CurrencyPipe, FormsModule, TableSort, SortColumn],
   template: `
     <div class="page-wrap"><div class="page-intro"><div><span class="eyebrow">{{ client ? 'Your account' : 'All-client reporting' }}</span><h1>Transactions</h1><p>{{ client ? 'Manage your portfolio activity in USD.' : 'Review activity across client accounts.' }}</p></div>@if (client) { <div class="cash-badge"><span>Buying power</span><strong>{{ store.cash | currency:'USD' }}</strong></div> }</div>
       <section class="surface data-surface">
@@ -35,10 +36,10 @@ type TransactionRow = {
           <form class="funds-panel" (ngSubmit)="funds()"><div class="fund-tabs"><button type="button" [class.active]="fundType === 'Deposit'" (click)="fundType = 'Deposit'">Deposit</button><button type="button" [class.active]="fundType === 'Withdrawal'" (click)="fundType = 'Withdrawal'">Withdraw</button></div><label class="fund-input">$<input name="amount" type="number" min="0.01" step="0.01" [(ngModel)]="amount" aria-label="Amount in USD" required><button class="primary-button">{{ fundType }}</button></label></form>
           @if (message) { <p class="empty-state" role="status">{{ message }}</p> }
         }
-        <div class="data-table transaction-table" [class.employee-transactions]="!client"><div class="data-row data-head"><span>Transaction ID</span>@if (!client) { <span>Client</span> }<span>Type</span><span>Amount</span>@if (client) { <span>Status</span> }<span>Date &amp; time</span></div>
+        <div class="data-table transaction-table" [class.employee-transactions]="!client" appSortTable #sort="appSortTable"><div class="data-row data-head"><span appSortColumn="id" sortLabel="Transaction ID">Transaction ID</span>@if (!client) { <span appSortColumn="client" sortLabel="Client">Client</span> }<span appSortColumn="type" sortLabel="Type">Type</span><span appSortColumn="amount" sortLabel="Amount">Amount</span>@if (client) { <span appSortColumn="status" sortLabel="Status">Status</span> }<span appSortColumn="date" sortKind="date" sortLabel="Date and time">Date &amp; time</span></div>
           @if (employee && loading()) { <p class="empty-state" role="status">Loading transactions…</p> }
           @else if (employee && loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
-          @else { @for (t of transactions; track t.id) { <div class="data-row"><strong>{{ t.id }}</strong>@if (!client) { <span>{{ t.client }}</span> }<span>{{ t.type }}</span><strong [class]="t.amount >= 0 ? 'positive' : 'negative'">{{ t.amount | currency:'USD' }}</strong>@if (client) { <span [class]="'status ' + (t.status || '').toLowerCase()">{{ t.status }}</span> }<span>{{ formatTimestamp(t.date) }}</span></div> } @empty { <p class="empty-state">No transactions yet.</p> } }
+          @else { @for (t of sort.rows(transactions); track t.id) { <div class="data-row"><strong>{{ t.id }}</strong>@if (!client) { <span>{{ t.client }}</span> }<span>{{ t.type }}</span><strong [class]="t.amount >= 0 ? 'positive' : 'negative'">{{ t.amount | currency:'USD' }}</strong>@if (client) { <span [class]="'status ' + (t.status || '').toLowerCase()">{{ t.status }}</span> }<span>{{ formatTimestamp(t.date) }}</span></div> } @empty { <p class="empty-state">No transactions yet.</p> } }
         </div>
       </section>
     </div>`,

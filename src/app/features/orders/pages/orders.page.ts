@@ -6,6 +6,7 @@ import Store from "../../../core/state/portfolio.store"
 import { BASE_PATH } from "../../../core/api/auth"
 import { ClientOrderRecord, OrdersApiService } from "../../../core/api/orders-api.service"
 import { TokenStore } from "../../../core/auth/token-store.service"
+import { TableSort, SortColumn } from "../../../shared/sorting/table-sort"
 
 type AdminOrderRecord = ClientOrderRecord & {
   order_id?: string | number
@@ -39,7 +40,7 @@ type OrderRow = {
 @Component({
   selector: "app-orders-page",
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, RouterLink],
+  imports: [CurrencyPipe, DecimalPipe, RouterLink, TableSort, SortColumn],
   templateUrl: "./orders.page.html",
   styleUrl: "./orders.page.scss",
 })

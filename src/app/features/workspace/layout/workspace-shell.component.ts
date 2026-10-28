@@ -30,8 +30,10 @@ import { catchError, EMPTY, exhaustMap, Subscription, timer } from "rxjs"
       </header><router-outlet/></div>
     } @else {
       <div class="employee-shell"><aside class="employee-sidebar"><app-brand/><div class="workspace-label"><span>Workspace</span><b>{{ store.session()?.role }}</b></div>
-        <nav>@for (page of employeePages; track page[0]) { <a [routerLink]="['/', store.session()?.role, page[0]]" routerLinkActive="active" [attr.title]="page[1]">{{ page[1] }}</a> }
-        @if (store.session()?.role === 'admin') { <a routerLink="/admin/reporters" routerLinkActive="active">Reporter accounts</a> }</nav>
+        <nav>@for (page of employeePages; track page[0]) {
+          <a [routerLink]="['/', store.session()?.role, page[0]]" routerLinkActive="active" [attr.title]="page[1]">{{ page[1] }}</a>
+          @if (page[0] === 'clients' && store.session()?.role === 'admin') { <a routerLink="/admin/reporters" routerLinkActive="active">Reporter accounts</a> }
+        }</nav>
         <div class="employee-user"><span>{{ store.name }}</span><button (click)="logout()">Sign out</button></div>
       </aside><div class="employee-main"><header><div><span>Veridian workspace</span><strong>Welcome, {{ store.name }}</strong></div><div class="employee-header-tools"><div class="token-countdowns" aria-label="Session refresh countdown"><span><small>Refresh</small><strong>{{ refreshPromptOpen() ? 'Now' : formatExpiry(tokenStore.accessSecondsRemaining()) }}</strong></span></div><button class="theme-toggle" type="button" [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" [attr.title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" (click)="theme.toggle()"><span aria-hidden="true">{{ theme.isDark() ? '☀' : '☾' }}</span></button><div class="employee-status"><i></i>USD</div></div></header><router-outlet/></div></div>
     }

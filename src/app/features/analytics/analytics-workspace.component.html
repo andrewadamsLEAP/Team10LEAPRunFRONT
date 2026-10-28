@@ -64,7 +64,7 @@
       <div class="orders-report"><app-analytics-card [report]="report" (retry)="retryReport($event)" />
         <nav class="pagination" aria-label="Order report pages">
           <button type="button" [disabled]="report.loading || offset() === 0" (click)="changePage(-1)">Previous</button>
-          <span>Page {{ offset() / pageSize() + 1 }} · up to {{ pageSize() }} orders per page</span>
+          <span>Page {{ offset() / pageSize() + 1 }} · up to {{ pageSize() }} orders per page · column sorting applies to this page</span>
           <button type="button" [disabled]="!canNextPage()" (click)="changePage(1)">Next</button>
         </nav>
       </div>

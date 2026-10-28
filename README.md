@@ -34,6 +34,22 @@ The project uses standalone Angular components. Feature code may depend on
 `core` and `shared`; `core` must not depend on feature code, and `shared` must
 remain free of business logic.
 
+## Table sorting
+
+Data column headers across client, admin, and reporter tables support click,
+Enter, and Space to cycle ascending, descending, and the original/default order.
+The active direction is shown with an arrow and exposed through `aria-sort`.
+IDs sort naturally, numeric amounts use underlying values rather than formatted
+currency text, and date columns sort chronologically. Missing values stay last
+in both directions. Each table maintains its own sort state, preserves filters
+and row actions, and reapplies sorting to updated data without mutating it.
+Action-only and empty navigation columns are not sortable.
+
+Sorting applies to loaded rows. Paginated analytics reports sort the current page,
+not the entire server-side result set; existing report ranking filters remain
+available for server-side ranking. Charts themselves retain their original order
+when the chart-value table is sorted. Run `npm run test:sorting` for sorting tests.
+
 ## Market price refresh
 
 The portfolio chart's 1D view supplements backend history with actual holdings
