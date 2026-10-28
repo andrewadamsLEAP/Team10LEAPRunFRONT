@@ -3,23 +3,24 @@
   z-index: 1000;
   right: 24px;
   bottom: 24px;
-  min-height: 52px;
-  padding: 0 19px 0 13px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   border: 1px solid #ffffff80;
   border-radius: 999px;
   background: linear-gradient(135deg, #187b5b, #105b43);
   color: #fff;
   box-shadow: 0 12px 32px #0d402d35;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 .chatbert-launcher:hover { transform: translateY(-2px); box-shadow: 0 16px 36px #0d402d42; }
 .chatbert-launcher-icon, .chatbert-brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #ffffff20; font-size: 18px; }
+.chatbert-launcher-icon { width: 26px; height: 26px; font-size: 16px; }
 .chatbert-panel {
   position: fixed;
   z-index: 1001;
@@ -70,7 +71,7 @@
 .chatbert-error { margin: 0 0 8px; color: #a33c43; font-size: 11px; line-height: 1.4; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 560px) {
-  .chatbert-launcher { right: 16px; bottom: 16px; min-height: 48px; }
+  .chatbert-launcher { right: 16px; bottom: 16px; min-height: 44px; }
   .chatbert-panel { right: 8px; bottom: 8px; width: calc(100vw - 16px); height: min(680px, calc(100dvh - 16px)); border-radius: 15px; }
 }
 @media (prefers-reduced-motion: reduce) {

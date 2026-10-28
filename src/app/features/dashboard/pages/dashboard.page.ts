@@ -1,16 +1,19 @@
 import { Component, computed, inject, OnInit, signal } from "@angular/core"
-import { CurrencyPipe, DecimalPipe } from "@angular/common"
+import { CurrencyPipe, DatePipe, DecimalPipe } from "@angular/common"
 import { RouterLink } from "@angular/router"
 import { OrdersApiService } from "../../../core/api/orders-api.service"
 import { TokenStore } from "../../../core/auth/token-store.service"
 import Store from "../../../core/state/portfolio.store"
 import PortfolioValueComponent from "../../../shared/charts/portfolio-value.component"
 import { Instrument } from "../../../core/models/data"
+import { marketPrice } from "../../../core/models/market-price"
+import { TableSort, SortColumn } from "../../../shared/sorting/table-sort"
+import NewsFeedComponent from "../../news/news-feed.component"
 
 @Component({
   selector: "app-dashboard-page",
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, RouterLink, PortfolioValueComponent],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, PortfolioValueComponent, NewsFeedComponent, TableSort, SortColumn],
   template: `
     <div class="page-wrap">
       <div class="page-intro"><div><span class="eyebrow">Client dashboard</span><h1>Good morning, {{ store.name }}</h1><p>Here is what is happening with your portfolio today.</p></div></div>
@@ -19,8 +22,8 @@ import { Instrument } from "../../../core/models/data"
         @if (store.instrumentLoading()) { <p class="empty-state" role="status">Loading trending tickers...</p> }
         @else if (store.instrumentError(); as error) { <p class="empty-state" role="alert">{{ error }} <button class="secondary-button" (click)="store.loadInstruments()">Retry</button></p> }
         @else {
-        <div class="ticker-table"><div class="ticker-row ticker-head"><span>Asset</span><span>Market</span><span>Price</span><span>Today</span><span>Volume</span><span></span></div>
-          @for (a of trending(); track a.ticker) { <a class="ticker-row" [routerLink]="['/client/ticker', a.ticker]"><span class="ticker-name"><i>{{ a.ticker[0] }}</i><b>{{ a.ticker }}<small>{{ a.displayName || '—' }}</small></b></span><span>{{ a.assetType === 'STOCK' ? 'Stock' : a.assetType === 'CRYPTO' ? 'Crypto' : 'Forex' }}</span><strong>{{ currentPrice(a) | currency:'USD':'symbol':(a.assetType === 'FOREX' ? '1.4-4' : '1.2-2') }}</strong><span [class]="a.changePercent! >= 0 ? 'positive' : 'negative'">{{ a.changePercent! > 0 ? '+' : '' }}{{ a.changePercent | number:'1.2-2' }}%</span><span>{{ a.volume == null ? '—' : (a.volume | number:'1.0-0') }}</span><span>›</span></a> } @empty { <p class="empty-state">No daily price changes available yet.</p> }
+        <div class="ticker-table" appSortTable #sort="appSortTable"><div class="ticker-row ticker-head"><span appSortColumn="ticker" sortLabel="Asset">Asset</span><span appSortColumn="assetType" sortLabel="Market">Market</span><span appSortColumn="price" sortLabel="Price">Price</span><span appSortColumn="changePercent" sortLabel="Today">Today</span><span appSortColumn="volume" sortLabel="Volume">Volume</span><span></span></div>
+          @for (a of sort.rows(trending(), sortValues); track a.ticker) { <a class="ticker-row" [routerLink]="['/client/ticker', a.ticker]"><span class="ticker-name"><i>{{ a.ticker[0] }}</i><b>{{ a.ticker }}<small>{{ a.displayName || '—' }}</small></b></span><span>{{ a.assetType === 'STOCK' ? 'Stock' : a.assetType === 'CRYPTO' ? 'Crypto' : 'Forex' }}</span><strong>{{ currentPrice(a) | currency:'USD':'symbol':(a.assetType === 'FOREX' ? '1.4-4' : '1.2-2') }}</strong><span [class]="a.changePercent! >= 0 ? 'positive' : 'negative'">{{ a.changePercent! > 0 ? '+' : '' }}{{ a.changePercent | number:'1.2-2' }}%</span><span>{{ a.volume == null ? '—' : (a.volume | number:'1.0-0') }}</span><span>›</span></a> } @empty { <p class="empty-state">No daily price changes available yet.</p> }
         </div>
         }
       </section><aside class="home-sidebar"><section class="surface"><div class="section-title small"><div><span class="eyebrow">Portfolio</span><h2>Top holdings</h2></div><a routerLink="/client/holdings">View all</a></div>
@@ -29,12 +32,14 @@ import { Instrument } from "../../../core/models/data"
         @if (ordersLoading()) { <p class="empty-state">Loading recent orders...</p> }
         @else if (ordersError()) { <p class="empty-state" role="alert">{{ ordersError() }}</p> }
         @else {
-          @for (o of recentOrders(); track o.id) { <div class="order-mini"><span><b>{{ o.type }} {{ o.ticker }}</b><small>{{ o.date }}</small></span><em [class]="'status ' + o.status.toLowerCase()">{{ o.status }}</em></div> } @empty { <p class="empty-state">No orders yet.</p> }
+          @for (o of recentOrders(); track o.id) { <div class="order-mini"><span><b>{{ o.type }} {{ o.ticker }}</b><small>{{ o.date ? (o.date | date:'MMM d, y, h:mm a') : '—' }}</small></span><em [class]="'status ' + o.status.toLowerCase()">{{ o.status }}</em></div> } @empty { <p class="empty-state">No orders yet.</p> }
         }
       </section></aside></div>
+      <app-news-feed class="dashboard-news" [preview]="true" />
     </div>`,
 })
 export default class DashboardPage implements OnInit {
+  readonly sortValues = { price: (instrument: Instrument) => this.currentPrice(instrument) }
   store = inject(Store)
   private readonly ordersApi = inject(OrdersApiService)
   private readonly tokenStore = inject(TokenStore)
@@ -42,7 +47,7 @@ export default class DashboardPage implements OnInit {
     id: string
     type: string
     ticker: string
-    date: string
+    date: Date | null
     status: string
   }[]>([])
   readonly ordersLoading = signal(false)
@@ -60,14 +65,19 @@ export default class DashboardPage implements OnInit {
       next: (records) => {
         this.recentOrders.set(
           records.map((record, index) => {
-            const date = record.createdAt ?? record.orderDate ?? record.order_date ?? "—"
-            const timestamp = Date.parse(date.replace(" ", "T"))
+            const dateValue = record.createdAt ?? record.orderDate ?? record.order_date ?? ""
+            const normalizedDate = dateValue.replace(
+              /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?)(?!Z|[+-]\d{2}:?\d{2})$/,
+              "$1T$2",
+            )
+            const parsedDate = new Date(normalizedDate)
+            const timestamp = parsedDate.getTime()
             return {
               id: String(record.orderId ?? record.order_id ?? index),
               type: record.orderType ?? record.order_type ?? "—",
               ticker: record.ticker ?? "—",
               status: record.status ?? record.orderStatus ?? record.order_status ?? "—",
-              date,
+              date: Number.isNaN(timestamp) ? null : parsedDate,
               timestamp: Number.isNaN(timestamp) ? 0 : timestamp,
             }
           })
@@ -95,10 +105,7 @@ export default class DashboardPage implements OnInit {
   }
 
   currentPrice(instrument: Instrument) {
-    if (instrument.bidPrice !== null && instrument.askPrice !== null) {
-      return (instrument.bidPrice + instrument.askPrice) / 2
-    }
-    return instrument.bidPrice ?? instrument.askPrice
+    return marketPrice(instrument)
   }
 
   positionValue(symbol: string, quantity: number) {

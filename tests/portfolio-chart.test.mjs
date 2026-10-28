@@ -139,6 +139,28 @@ const shortRangeFixtures=[['1D',25,1],['1W',29,6]].map(([period,count,hours])=>{
   return {period,count,gap,data}
 })
 const chartSource=await read('src/app/shared/analytics/analytics-chart.component.ts')
+component.selectPeriod('1D')
+component.now.set(actualNow)
+component.history.set({currency:'USD',coverage:{complete:true},points:[
+  historyPoint(new Date(actualNow-3600000).toISOString(),1000),
+]})
+component.liveObservations.set([
+  {timestamp:new Date(actualNow-5000).toISOString(),invested:1010},
+  {timestamp:new Date(actualNow).toISOString(),invested:1015},
+])
+assert.deepEqual(component.chart().values,[1000,1010,1015],'1D must plot real observations five seconds apart')
+assert.equal(Date.parse(component.chart().labels.at(-1))-Date.parse(component.chart().labels.at(-2)),5000)
+for (const period of ['1W','1M','1Y']) {
+  component.selectPeriod(period)
+  assert.deepEqual(component.chart().values,[1000],`${period} must remain historical only`)
+}
+component.selectPeriod('1D')
+component.now.set(actualNow)
+component.history.set({currency:'USD',coverage:{complete:true},points:[
+  historyPoint(new Date(actualNow).toISOString(),1016),
+]})
+assert.deepEqual(component.chart().values,[1016],'Backend history replaces overlapping live observations')
+component.liveObservations.set([])
 let chartInput={kind:'pie',labels:['stock','crypto','bitcoin'],values:[600,300,100],format:'money'}
 const {AnalyticsChart}=compile(chartSource.slice(chartSource.indexOf('export default class')),['AnalyticsChart'],{
   input:Object.assign(value=>()=>value,{required:()=>()=>chartInput}),computed,

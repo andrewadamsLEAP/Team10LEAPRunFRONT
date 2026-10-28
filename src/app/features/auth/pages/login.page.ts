@@ -21,9 +21,8 @@ import { BASE_PATH } from "../../../core/api/auth"
       <section class="auth-brand-panel">
         <app-brand/>
         <div class="auth-message">
-          <span class="eyebrow">One platform. Every market.</span>
-          <h1>Invest with clarity.<br>Move with confidence.</h1>
-          <p>Track markets, manage your portfolio, and trade stocks, crypto, and forex from one workspace.</p>
+          <h1>Simplified investing for stocks, crypto, and forex.</h1>
+          <p>Follow markets, check your portfolio, and manage trades from one workspace.</p>
         </div>
         <div class="auth-market-card">
           <div><span>Market pulse</span><b>USD markets</b></div>
@@ -33,6 +32,12 @@ import { BASE_PATH } from "../../../core/api/auth"
             <span>EUR-USD <em>+0.28%</em></span>
           </div>
           <app-chart/>
+          <ul class="login-tickers" aria-label="Featured companies">
+            <li><img src="assets/tickers/apple.png" alt="Apple" width="32" height="32"><span>AAPL</span></li>
+            <li><img src="assets/tickers/amazon.png" alt="Amazon" width="32" height="32"><span>AMZN</span></li>
+            <li><img src="assets/tickers/google.png" alt="Google" width="32" height="32"><span>GOOGL</span></li>
+            <li><img src="assets/tickers/microsoft.png" alt="Microsoft" width="32" height="32"><span>MSFT</span></li>
+          </ul>
         </div>
       </section>
       <section class="auth-form-panel">

@@ -4,6 +4,7 @@ import { HttpClient } from "@angular/common/http"
 import { ActivatedRoute, RouterLink } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
 import { BASE_PATH } from "../../../core/api/auth"
+import { TableSort, SortColumn } from "../../../shared/sorting/table-sort"
 
 type ClientOrderRecord = {
   orderId: number | string
@@ -29,7 +30,7 @@ type ClientTransactionRecord = {
 @Component({
   selector: "app-client-order-history-page",
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, TableSort, SortColumn],
   template: `
     <div class="page-wrap client-history-page"><a class="back-button" [routerLink]="['/', role, 'clients']">‹ Client accounts</a>
       @if (account; as client) {
@@ -41,8 +42,8 @@ type ClientTransactionRecord = {
               <div class="surface history-table-card">
                 @if (ordersLoading()) { <p class="history-state" role="status">Loading orders…</p> }
                 @else if (ordersError()) { <p class="history-state error" role="alert">{{ ordersError() }}</p> }
-                @else { <div class="history-table-scroll"><div class="data-table history-table history-orders-table"><div class="data-row data-head"><span>Order ID</span><span>Client</span><span>Ticker</span><span>Type</span><span>Status</span><span>Price</span><span>Quantity</span><span>Date &amp; time</span></div>
-                  @for (order of clientOrders(); track order.orderId) { <div class="data-row"><strong>{{ order.orderId }}</strong><span>{{ order.clientUsername }}</span><span class="ticker-cell">{{ order.ticker }}</span><span>{{ order.orderType }}</span><span><i [class]="'history-status ' + order.status.toLowerCase()">{{ order.status }}</i></span><span>{{ order.price | currency:'USD':'symbol':'1.2-4' }}</span><span>{{ order.quantity | number:'1.0-6' }}</span><span>{{ order.createdAt | date:'medium' }}</span></div> } @empty { <p class="history-state" role="status">No orders for this client yet.</p> }
+                @else { <div class="history-table-scroll"><div class="data-table history-table history-orders-table" appSortTable #orderSort="appSortTable"><div class="data-row data-head"><span appSortColumn="orderId" sortLabel="Order ID">Order ID</span><span appSortColumn="clientUsername" sortLabel="Client">Client</span><span appSortColumn="ticker" sortLabel="Ticker">Ticker</span><span appSortColumn="orderType" sortLabel="Type">Type</span><span appSortColumn="status" sortLabel="Status">Status</span><span appSortColumn="price" sortLabel="Price">Price</span><span appSortColumn="quantity" sortLabel="Quantity">Quantity</span><span appSortColumn="createdAt" sortKind="date" sortLabel="Date and time">Date &amp; time</span></div>
+                  @for (order of orderSort.rows(clientOrders()); track order.orderId) { <div class="data-row"><strong>{{ order.orderId }}</strong><span>{{ order.clientUsername }}</span><span class="ticker-cell">{{ order.ticker }}</span><span>{{ order.orderType }}</span><span><i [class]="'history-status ' + order.status.toLowerCase()">{{ order.status }}</i></span><span>{{ order.price | currency:'USD':'symbol':'1.2-4' }}</span><span>{{ order.quantity | number:'1.0-6' }}</span><span>{{ order.createdAt | date:'medium' }}</span></div> } @empty { <p class="history-state" role="status">No orders for this client yet.</p> }
                 </div></div> }
               </div>
             </section>
@@ -52,8 +53,8 @@ type ClientTransactionRecord = {
                 <div class="surface history-table-card">
                   @if (transactionsLoading()) { <p class="history-state" role="status">Loading transactions…</p> }
                   @else if (transactionsError()) { <p class="history-state error" role="alert">{{ transactionsError() }}</p> }
-                  @else { <div class="history-table-scroll"><div class="data-table history-table history-transactions-table"><div class="data-row data-head"><span>Transaction ID</span><span>Client</span><span>Type</span><span>Amount</span><span>Date &amp; time</span></div>
-                    @for (transaction of clientTransactions(); track transaction.transactionId) { <div class="data-row"><strong>{{ transaction.transactionId }}</strong><span>{{ transaction.clientUsername }}</span><span>{{ transaction.type }}</span><strong [class]="transaction.amount >= 0 ? 'positive' : 'negative'">{{ transaction.amount | currency:'USD' }}</strong><span>{{ transaction.timestamp | date:'medium' }}</span></div> } @empty { <p class="history-state" role="status">No transactions for this client yet.</p> }
+                  @else { <div class="history-table-scroll"><div class="data-table history-table history-transactions-table" appSortTable #transactionSort="appSortTable"><div class="data-row data-head"><span appSortColumn="transactionId" sortLabel="Transaction ID">Transaction ID</span><span appSortColumn="clientUsername" sortLabel="Client">Client</span><span appSortColumn="type" sortLabel="Type">Type</span><span appSortColumn="amount" sortLabel="Amount">Amount</span><span appSortColumn="timestamp" sortKind="date" sortLabel="Date and time">Date &amp; time</span></div>
+                    @for (transaction of transactionSort.rows(clientTransactions()); track transaction.transactionId) { <div class="data-row"><strong>{{ transaction.transactionId }}</strong><span>{{ transaction.clientUsername }}</span><span>{{ transaction.type }}</span><strong [class]="transaction.amount >= 0 ? 'positive' : 'negative'">{{ transaction.amount | currency:'USD' }}</strong><span>{{ transaction.timestamp | date:'medium' }}</span></div> } @empty { <p class="history-state" role="status">No transactions for this client yet.</p> }
                   </div></div> }
                 </div>
               </section>

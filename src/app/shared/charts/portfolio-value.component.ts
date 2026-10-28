@@ -50,15 +50,16 @@ import type { ReportChart } from "../../core/api/analytics-presentation"
       </div>
       @if (error()) { <p class="valuation-error" role="alert">{{ error() }}</p> }
       @if (historyError()) { <p class="valuation-error" role="alert">{{ historyError() }}</p> }
-      @if (incomplete()) { <p class="valuation-error" role="status">Incomplete historical coverage. Missing or unverified valuations are shown as gaps.</p> }
       <footer class="portfolio-footer">
-        <span class="coverage-label">{{ coverageLabel() }} <span aria-hidden="true">·</span> History refreshes every 30 seconds</span>
+        <span class="coverage-label">{{ coverageLabel() }} <span aria-hidden="true">·</span> {{ period() === '1D' ? 'Live observations every 5 seconds; history every 30 seconds' : 'History refreshes every 30 seconds' }}</span>
         @if (latest(); as value) { <span class="last-updated">Last updated {{ value.timestamp | date:'shortTime' }}</span> }
       </footer>
       <details class="valuation-details">
         <summary>About this valuation &amp; chart coverage</summary>
         <p>Historical holdings market value excludes cash and is reconstructed by the backend for the selected range.
           Current account figures update separately every 5 seconds using latest bid, with ask fallback.
+          The 1D chart includes those real observations collected while this dashboard is open;
+          earlier history retains the backend's sampling interval. Longer ranges use backend history only.
           Changes in market value are not investment returns.</p>
         @if (latest(); as value) {
           <p>Last observed: {{ value.timestamp | date:'medium' }}.
@@ -78,11 +79,23 @@ export default class PortfolioValueComponent {
   readonly period = signal<PortfolioPeriod>("1M")
   readonly history = signal<PortfolioHistory | null>(null)
   readonly latest = signal<PortfolioObservation | null>(null)
+  readonly liveObservations = signal<PortfolioObservation[]>([])
   readonly loading = signal(false)
   readonly error = signal("")
   readonly historyError = signal("")
   readonly now = signal(Date.now())
-  readonly historyPoints = computed(() => portfolioHistorySeries(this.history()?.points ?? [], this.period(), this.now()))
+  readonly historyPoints = computed(() => {
+    const points = portfolioHistorySeries(this.history()?.points ?? [], this.period(), this.now())
+    if (this.period() !== "1D") return points
+    const lastHistoricalTime = points.length ? Date.parse(points[points.length - 1].timestamp) : -Infinity
+    const live = this.liveObservations()
+      .filter((point) => {
+        const time = Date.parse(point.timestamp)
+        return time > lastHistoricalTime && time >= this.now() - 86400000 && time <= this.now()
+      })
+      .map((point) => ({ timestamp: point.timestamp, invested: point.invested }))
+    return [...points, ...live]
+  })
   readonly incomplete = computed(() => {
     const history = this.history()
     if (!history) return false
@@ -134,6 +147,7 @@ export default class PortfolioValueComponent {
     effect((onCleanup) => {
       const user = this.tokens.currentUser()
       this.latest.set(null)
+      this.liveObservations.set([])
       this.error.set("")
       if (user?.actorType !== "client") return
       const subscription = merge(timer(0, 5000), this.refreshes).pipe(
@@ -144,6 +158,12 @@ export default class PortfolioValueComponent {
         }))),
       ).subscribe((point) => {
         this.latest.set(point)
+        const timestamp = Date.parse(point.timestamp)
+        this.liveObservations.update((points) => [
+          ...points.filter((previous) => Date.parse(previous.timestamp) > timestamp - 86400000 && previous.timestamp !== point.timestamp),
+          point,
+        ].sort((left, right) => Date.parse(left.timestamp) - Date.parse(right.timestamp)).slice(-17280))
+        if (this.period() === "1D") this.now.set(timestamp)
         this.error.set("")
       })
       onCleanup(() => subscription.unsubscribe())

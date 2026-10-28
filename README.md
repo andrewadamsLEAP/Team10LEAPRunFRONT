@@ -34,6 +34,73 @@ The project uses standalone Angular components. Feature code may depend on
 `core` and `shared`; `core` must not depend on feature code, and `shared` must
 remain free of business logic.
 
+## Table sorting
+
+Data column headers across client, admin, and reporter tables support click,
+Enter, and Space to cycle ascending, descending, and the original/default order.
+The active direction is shown with an arrow and exposed through `aria-sort`.
+IDs sort naturally, numeric amounts use underlying values rather than formatted
+currency text, and date columns sort chronologically. Missing values stay last
+in both directions. Each table maintains its own sort state, preserves filters
+and row actions, and reapplies sorting to updated data without mutating it.
+Action-only and empty navigation columns are not sortable.
+
+Sorting applies to loaded rows. Paginated analytics reports sort the current page,
+not the entire server-side result set; existing report ranking filters remain
+available for server-side ranking. Charts themselves retain their original order
+when the chart-value table is sorted. Run `npm run test:sorting` for sorting tests.
+
+## Market price refresh
+
+The portfolio chart's 1D view supplements backend history with actual holdings
+valuations collected every five seconds while the dashboard is open. These
+memory-only observations cover at most 24 hours and do not fabricate finer
+historical samples. Backend samples replace overlapping live observations.
+The 1W, 1M, and 1Y views continue to plot backend history only.
+
+Market quotes refresh every five seconds when no refresh is already running.
+Instrument names and statistics come from the instrument endpoint; bid/ask and
+quote timestamps come from `/api/v1/trading/market-data/prices/{ticker}`, the
+same latest-price source used by the dashboard valuation. The newest recorded
+quote matching the ticker is selected, and daily change is recalculated from it.
+Slower batches are allowed to finish instead of being cancelled by the next
+poll. Each batch has a 15-second deadline. Refresh failures retain existing
+quotes, show an out-of-date warning, and retry on subsequent polling ticks.
+The Markets tab also provides Retry now. Run `npm run test:markets` to verify
+slow responses, timeout recovery, failure recovery, and empty catalogues.
+
+Daily percentage change is calculated as `(midpoint - previousClose) /
+previousClose * 100`, using the bid/ask midpoint (one-sided quote fallback)
+consistently on Markets, overview, and ticker detail. Invalid or missing prices
+or previous closes produce an unavailable change, not zero. Backend previous
+closes must be for the same instrument, currency/pair direction, and previous
+trading session; the frontend cannot repair a stale or mismatched baseline.
+
+## Market news
+
+The client overview previews three articles; the News tab (`/client/news`)
+shows paginated results from `GET /api/v1/news?limit=25&page=1&language=en`.
+The shared feed accepts an optional comma-separated `symbols` input, passed as
+the `symbols` query parameter. Requests use `HttpClient` and the existing JWT
+interceptor, including session-expiry handling. There are no direct Marketaux
+calls or provider credentials in the frontend.
+
+The backend returns Marketaux JSON with `meta` and `data`. Articles use `uuid`,
+`title`, `description` (or `snippet`), `source`, `published_at`, `entities`,
+`image_url`, and `url`. Pagination uses `meta.found`, `meta.returned`, and
+`meta.limit`; when no total is provided, a full page permits requesting the next.
+Responses wrapped in a single `data` envelope are also accepted. Missing `meta`
+does not block valid articles: pagination then uses the returned article count
+and requested page size. Invalid article lists still display an explicit error.
+Images and original article links accept HTTP(S) URLs only. Missing timestamps
+are explicitly unavailable and failed images are removed.
+
+Loading, empty, retry/error, refresh, and previous/next-page states are provided.
+Page changes and leaving the feed cancel pending requests. Pagination replaces
+the visible page rather than accumulating duplicates, and each response is
+deduplicated by UUID and ordered newest first. Run `npm run test:news` for
+response, request, pagination, and state tests.
+
 ## Python analytics
 
 All analytics use the Python app on **port 5000**, not the authentication API on

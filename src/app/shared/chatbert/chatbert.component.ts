@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from "@angular/common/http"
-import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from "@angular/core"
+import { afterEveryRender, Component, ElementRef, OnDestroy, ViewChild, inject, signal } from "@angular/core"
 import { FormsModule } from "@angular/forms"
 import { ChatResponse, ChatService, validateChatMessage } from "../../core/api/chat.service"
 
@@ -67,7 +67,7 @@ const INTRODUCTION =
           I can’t access accounts, make trades, or give investment advice. This chat is stateless, so name the topic again in follow-up questions.
         </p>
 
-        <div class="chatbert-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Chat messages">
+        <div #messageList class="chatbert-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Chat messages">
           @for (message of messages; track $index) {
             <article class="chatbert-message" [class.chatbert-user-message]="message.role === 'user'" [class.chatbert-assistant-message]="message.role === 'assistant'">
               <span class="chatbert-message-author">{{ message.role === 'user' ? 'You' : 'Chatbert' }}</span>
@@ -126,6 +126,7 @@ export default class ChatbertComponent implements OnDestroy {
   private readonly chatService = inject(ChatService)
   @ViewChild("messageInput") private messageInput?: ElementRef<HTMLTextAreaElement>
   @ViewChild("launcher") private launcher?: ElementRef<HTMLButtonElement>
+  @ViewChild("messageList") private messageList?: ElementRef<HTMLDivElement>
 
   readonly isOpen = signal(false)
   readonly pending = signal(false)
@@ -134,6 +135,25 @@ export default class ChatbertComponent implements OnDestroy {
   draft = ""
   validationMessage = ""
   private cooldownTimer?: ReturnType<typeof setInterval>
+  private lastScrollState = ""
+
+  constructor() {
+    afterEveryRender({
+      write: () => this.scrollToLatest(),
+    })
+  }
+
+  private scrollToLatest() {
+    const list = this.messageList?.nativeElement
+    if (!list) {
+      this.lastScrollState = ""
+      return
+    }
+    const state = `${this.messages.length}:${this.pending()}`
+    if (state === this.lastScrollState) return
+    list.scrollTop = list.scrollHeight
+    this.lastScrollState = state
+  }
 
   openChat() {
     this.isOpen.set(true)

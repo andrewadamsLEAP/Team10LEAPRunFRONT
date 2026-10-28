@@ -2,7 +2,8 @@ import { inject, Injectable } from "@angular/core"
 import { HttpClient } from "@angular/common/http"
 import { BASE_PATH } from "./auth"
 import { Instrument } from "../models/data"
-import { forkJoin, map, Observable, switchMap } from "rxjs"
+import { dailyChangePercent } from "../models/market-price"
+import { forkJoin, map, Observable, of, switchMap } from "rxjs"
 
 export type PriceHistoryPoint = {
   ticker: string
@@ -53,17 +54,33 @@ export class MarketDataService {
   }
 
   getInstrument(ticker: string): Observable<Instrument> {
-    return this.http
-      .get<BackendInstrument>(
+    return forkJoin({
+      instrument: this.http.get<BackendInstrument>(
         `${this.apiBasePath}/v1/trading/market-data/instruments/${this.tickerPath(ticker)}`,
-      )
-      .pipe(map((instrument) => this.toInstrument(instrument)))
+      ),
+      quotes: this.getLatestPrice(ticker),
+    }).pipe(map(({ instrument, quotes }) => {
+      const canonical = (value: string) => value.trim().replaceAll("/", "-").toUpperCase()
+      const now = Date.now()
+      const latest = quotes
+        .filter((quote) => canonical(quote.ticker) === canonical(ticker)
+          && Number.isFinite(Date.parse(quote.recorded_at)) && Date.parse(quote.recorded_at) <= now)
+        .sort((left, right) => Date.parse(right.recorded_at) - Date.parse(left.recorded_at))[0]
+      if (!latest) throw new Error(`No latest quote is available for ${ticker}.`)
+      return this.toInstrument({
+        ...instrument,
+        bidPrice: latest.bid_price,
+        askPrice: latest.ask_price,
+        quoteTimestamp: latest.quote_timestamp,
+        recordedAt: latest.recorded_at,
+      })
+    }))
   }
 
   getInstruments(): Observable<Instrument[]> {
     return this.getTickers().pipe(
       switchMap((tickers) =>
-        forkJoin(tickers.map((ticker) => this.getInstrument(ticker))),
+        tickers.length ? forkJoin(tickers.map((ticker) => this.getInstrument(ticker))) : of([]),
       ),
     )
   }
@@ -86,6 +103,6 @@ export class MarketDataService {
   }
 
   private toInstrument(instrument: BackendInstrument): Instrument {
-    return instrument
+    return { ...instrument, changePercent: dailyChangePercent(instrument) }
   }
 }
