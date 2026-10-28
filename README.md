@@ -103,6 +103,12 @@ response, request, pagination, and state tests.
 
 ## Python analytics
 
+Timezone-qualified report timestamps (including Price Timestamp) display in the
+browser's local timezone with a timezone label and second precision. The original
+values remain unchanged for sorting. Date-only values and timestamps without a
+timezone remain as supplied; no timezone is guessed. Formatting does not refresh
+warehouse data.
+
 All analytics use the Python app on **port 5000**, not the authentication API on
 port 3000 or Spring on port 8085. The existing development proxy strips
 `/analytics-api` and forwards to `http://localhost:5000`. For example,
