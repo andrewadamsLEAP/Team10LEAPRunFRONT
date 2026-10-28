@@ -42,7 +42,7 @@ import { catchError, EMPTY, exhaustMap, Subscription, timer } from "rxjs"
         <section class="session-expiry-modal" role="alertdialog" aria-modal="true" aria-labelledby="session-expiry-title" aria-describedby="session-expiry-message">
           <span class="eyebrow">Session refresh required</span>
           <h2 id="session-expiry-title">Keep your session active?</h2>
-          <p id="session-expiry-message">Your access token has expired. Refresh your session within {{ promptSecondsRemaining() }} seconds or you will be signed out.</p>
+          <p id="session-expiry-message">Your session is nearing expiration. Refresh within {{ promptSecondsRemaining() }} seconds to stay signed in, or you will be signed out.</p>
           @if (refreshError()) { <p class="session-refresh-error" role="alert">{{ refreshError() }}</p> }
           <button class="primary-button" type="button" [disabled]="refreshing()" (click)="refreshSession()">{{ refreshing() ? 'Refreshing…' : 'Refresh session' }}</button>
         </section>
@@ -88,7 +88,7 @@ export default class Shell implements OnDestroy {
         if (
           this.store.session() &&
           this.tokenStore.accessToken() &&
-          this.tokenStore.accessSecondsRemaining() === 0
+          (this.tokenStore.accessSecondsRemaining() ?? Number.POSITIVE_INFINITY) <= 60
         ) {
           if ((this.tokenStore.refreshSecondsRemaining() ?? 0) <= 0) {
             this.logout()

@@ -56,7 +56,7 @@ type AccountDraft = Account & {
     </div>
     @if (draft; as d) {
       <div class="modal-backdrop"><form class="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" (ngSubmit)="save()"><div class="modal-heading"><div><span class="eyebrow">Account details</span><h2 id="account-title">{{ editing ? 'Edit account' : 'Create account' }}</h2></div><button type="button" aria-label="Close dialog" (click)="draft = null">×</button></div>
-        <label><span>Username</span><input name="username" [(ngModel)]="d.username" required [readonly]="editing"></label>
+        <label><span>Username</span><input name="username" [(ngModel)]="d.username" required [readonly]="reporters && editing"></label>
         @if (reporters) {
           <label><span>First name</span><input name="firstName" [(ngModel)]="d.firstName" required></label>
           <label><span>Last name</span><input name="lastName" [(ngModel)]="d.lastName" required></label>
@@ -228,6 +228,11 @@ export default class AccountManagementPage implements OnInit {
       }
       if (!account.username || !account.email.includes("@"))
         throw new Error("Enter a username and valid email.")
+      if (this.editing && this.accounts.some((existing) =>
+        existing.id !== account.id && existing.username.toLowerCase() === account.username,
+      )) {
+        throw new Error("That username is already in use.")
+      }
 
       if (this.reporters && !this.editing) {
         if (!account.firstName.trim() || !account.lastName.trim() || account.password.length < 8)
