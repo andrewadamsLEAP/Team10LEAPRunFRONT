@@ -62,7 +62,7 @@ export type Account = {
   lastName?: string
   cash: number
   role?: string
-  //status: "Active" | "Suspended"
+  status?: "Active" | "Suspended"
 }
 
 export const assets: Asset[] = [
