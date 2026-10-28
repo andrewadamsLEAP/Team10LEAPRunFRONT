@@ -26,6 +26,8 @@
 .row-actions { display: flex; align-items: center; gap: 3px; }
 .row-actions button { padding: 4px 6px; border: 1px solid var(--line); border-radius: 3px; background: white; color: #617068; font-size: 7px; cursor: pointer; }
 .row-actions button.danger { color: var(--red); }
+.row-actions button.suspend-action { color: #c03945; }
+.row-actions button.activate-action { color: #117550; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 30; padding: 20px; background: #102a2099; backdrop-filter: blur(3px); display: grid; place-items: center; }
 .account-modal { width: min(440px, 100%); padding: 23px; border-radius: 10px; background: white; box-shadow: 0 24px 70px #0d261d45; animation: modal-in .18s ease-out; }
 .modal-heading { margin-bottom: 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }

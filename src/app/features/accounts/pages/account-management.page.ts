@@ -31,6 +31,8 @@ type ClientAdminRecord = {
   firstName: string
   lastName: string
   cashAmount: number
+  email?: string | null
+  status?: "Active" | "Suspended"
 }
 
 type AccountDraft = Account & {
@@ -49,7 +51,7 @@ type AccountDraft = Account & {
       <section class="surface data-surface"><div class="data-table accounts-table admin" [class.reporter-accounts]="reporters" appSortTable #sort="appSortTable"><div class="data-row data-head"><span appSortColumn="username" sortLabel="Username">Username</span>@if (reporters) { <span appSortColumn="fullName" sortLabel="Full name">Full name</span><span appSortColumn="email" sortLabel="Email">Email</span><span appSortColumn="role" sortLabel="Role">Role</span> } @else { <span appSortColumn="firstName" sortLabel="First name">First name</span><span appSortColumn="lastName" sortLabel="Last name">Last name</span><span appSortColumn="cash" sortLabel="Cash">Cash</span><span>Actions</span> }</div>
         @if (loading()) { <p class="empty-state" role="status">Loading {{ reporters ? 'reporter' : 'client' }} accounts…</p> }
         @else if (loadError()) { <p class="empty-state" role="alert">{{ loadError() }}</p> }
-        @else { @for (a of sort.rows(accounts); track a.id) { <div class="data-row">@if (reporters) { <strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span><span>{{ a.email || '—' }}</span><span>{{ a.role || '—' }}</span> } @else { <a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']"><strong>{{ a.username }}</strong></a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.firstName || '—' }}</a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.lastName || '—' }}</a><span>{{ a.cash | currency:'USD' }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button class="danger" (click)="remove(a)">Delete</button></div> }</div> } @empty { <p class="empty-state">No accounts yet.</p> } }
+        @else { @for (a of sort.rows(accounts); track a.id) { <div class="data-row">@if (reporters) { <strong>{{ a.username }}</strong><span>{{ a.fullName || a.username }}</span><span>{{ a.email || '—' }}</span><span>{{ a.role || '—' }}</span> } @else { <a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']"><strong>{{ a.username }}</strong></a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.firstName || '—' }}</a><a class="account-client-link" [routerLink]="['/admin/clients', a.username, 'transactions']">{{ a.lastName || '—' }}</a><span>{{ a.cash | currency:'USD' }}</span><div class="row-actions"><button (click)="edit(a)">Edit</button><button type="button" [class.suspend-action]="a.status !== 'Suspended'" [class.activate-action]="a.status === 'Suspended'" (click)="toggleStatus(a)">{{ a.status === 'Suspended' ? 'Activate' : 'Suspend' }}</button></div> }</div> } @empty { <p class="empty-state">No accounts yet.</p> } }
       </div></section>
     </div>
     @if (draft; as d) {
@@ -61,14 +63,14 @@ type AccountDraft = Account & {
           <label><span>Password</span><input name="password" [(ngModel)]="d.password" type="password" autocomplete="new-password" required minlength="8"></label>
           <label><span>Role</span><select name="role" [(ngModel)]="d.role" disabled><option value="reporter">Reporter</option></select></label>
         } @else {
-          <label><span>Full name</span><input name="fullName" [(ngModel)]="d.fullName"></label>
+          <label><span>First name</span><input name="firstName" [(ngModel)]="d.firstName"></label>
+          <label><span>Last name</span><input name="lastName" [(ngModel)]="d.lastName"></label>
         }
         <label><span>Email</span><input name="email" type="email" [(ngModel)]="d.email" required></label>
         @if (error) { <div class="form-error" role="alert">{{ error }}</div> }
-        <div class="modal-actions"><button type="button" class="secondary-button" (click)="draft = null">Cancel</button><button class="primary-button">Save account</button></div>
+        <div class="modal-actions"><button type="button" class="secondary-button" [disabled]="saving()" (click)="draft = null">Cancel</button><button class="primary-button" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save account' }}</button></div>
       </form></div>
     }
-    @if (deleting; as a) { <div class="modal-backdrop"><section class="account-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title"><h2 id="delete-title">Delete {{ a.username }}?</h2><p>This removes account access. Historical reporting is retained.</p><div class="modal-actions"><button class="secondary-button" (click)="deleting = null">Cancel</button><button class="primary-button" (click)="confirmDelete()">Delete account</button></div></section></div> }
   `,
 })
 export default class AccountManagementPage implements OnInit {
@@ -77,6 +79,7 @@ export default class AccountManagementPage implements OnInit {
   http = inject(HttpClient)
   apiBasePath = inject(BASE_PATH)
   loading = signal(false)
+  saving = signal(false)
   loadError = signal("")
 
   ngOnInit() {
@@ -99,8 +102,9 @@ export default class AccountManagementPage implements OnInit {
             fullName: [record.firstName, record.lastName].filter(Boolean).join(" "),
             firstName: record.firstName,
             lastName: record.lastName,
-            email: "",
+            email: record.email ?? "",
             cash: Number(record.cashAmount),
+            status: record.status ?? "Active",
           })))
           this.loading.set(false)
         },
@@ -183,7 +187,6 @@ export default class AccountManagementPage implements OnInit {
     return this.store.reporters().some((reporter) => reporter.username === account.username)
   }
   draft: AccountDraft | null = null
-  deleting: Account | null = null
   editing = false
   error = ""
   create() {
@@ -207,20 +210,22 @@ export default class AccountManagementPage implements OnInit {
     this.error = ""
     this.draft = { ...a, firstName: a.firstName ?? "", lastName: a.lastName ?? "", password: "", role: a.role ?? "client" }
   }
-  remove(a: Account) {
-    this.deleting = a
-  }
-  confirmDelete() {
-    if (!this.deleting) return
+  toggleStatus(a: Account) {
     this.store[this.key].update((items) =>
-      items.filter((a) => a.id !== this.deleting!.id),
+      items.map((item) => item.id === a.id
+        ? { ...item, status: item.status === "Suspended" ? "Active" : "Suspended" }
+        : item),
     )
-    this.deleting = null
   }
   save() {
     try {
       const account = this.draft!
       account.username = account.username.trim().toLowerCase()
+      if (!this.reporters) {
+        account.firstName = account.firstName.trim()
+        account.lastName = account.lastName.trim()
+        account.fullName = [account.firstName, account.lastName].filter(Boolean).join(" ")
+      }
       if (!account.username || !account.email.includes("@"))
         throw new Error("Enter a username and valid email.")
 
@@ -245,6 +250,32 @@ export default class AccountManagementPage implements OnInit {
               this.error = error.error?.message || error.message || "Unable to create reporter account."
             },
           })
+        return
+      }
+
+      if (!this.reporters && this.editing) {
+        this.saving.set(true)
+        this.error = ""
+        this.http.patch(
+          `${this.apiBasePath}/v1/employees/admin/update/${account.id}`,
+          {
+            username: account.username,
+            firstName: account.firstName,
+            lastName: account.lastName,
+            email: account.email.trim(),
+          },
+          { timeout: 15000 },
+        ).subscribe({
+          next: () => {
+            this.store.saveAccount(this.key, { ...account })
+            this.saving.set(false)
+            this.draft = null
+          },
+          error: (error: { error?: { message?: string }; message?: string }) => {
+            this.saving.set(false)
+            this.error = error.error?.message || error.message || "Unable to update client account."
+          },
+        })
         return
       }
 
