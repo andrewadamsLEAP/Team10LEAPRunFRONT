@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http"
 import { inject, Injectable, signal } from "@angular/core"
 import { map, tap } from "rxjs"
-import { EMPTY, Subscription, catchError, interval, startWith, switchMap } from "rxjs"
+import { EMPTY, Subscription, catchError, exhaustMap, interval, startWith, timeout } from "rxjs"
 import {
   Account,
   Asset,
@@ -89,7 +89,7 @@ export default class Store {
     { client: "jordanlee", symbol: "NVDA", quantity: 48, average: 118.24 },
     {
       client: "jordanlee",
-      symbol: "BTC/USD",
+      symbol: "BTC-USD",
       quantity: 0.124,
       average: 91842.1,
     },
@@ -138,20 +138,24 @@ export default class Store {
     )
   }
   get invested() {
-    return this.holdings.reduce(
-      (sum, p) =>
-        sum +
-        p.quantity * this.assets.find((a) => a.symbol === p.symbol)!.price,
-      0,
-    )
+    const values = this.holdings.map((position) => this.holdingValue(position.symbol, position.quantity))
+    return values.some((value) => value === null) ? null : values.reduce<number>((sum, value) => sum + value!, 0)
+  }
+  holdingValue(symbol: string, quantity: number): number | null {
+    const instrument = this.instruments().find((item) => this.canonicalTicker(item.ticker) === this.canonicalTicker(symbol))
+    const price = instrument?.bidPrice ?? instrument?.askPrice
+    return price == null || !Number.isFinite(price) || price < 0 || !Number.isFinite(quantity) ? null : price * quantity
+  }
+  private canonicalTicker(ticker: string) {
+    return ticker.trim().replaceAll("/", "-").toUpperCase()
   }
   loadInstruments() {
     this.instrumentLoading.set(true)
     this.instrumentError.set(null)
-    this.marketDataService.getInstruments().subscribe({
+    this.marketDataService.getInstruments().pipe(timeout(15_000)).subscribe({
       next: (instruments) => {
-        this.instruments.set(instruments)
         this.applyInstrumentPrices(instruments)
+        this.instruments.set(instruments)
         this.instrumentLoading.set(false)
       },
       error: () => {
@@ -165,28 +169,37 @@ export default class Store {
     this.marketPolling = interval(5_000)
       .pipe(
         startWith(0),
-        switchMap(() =>
+        exhaustMap(() =>
           this.marketDataService
             .getInstruments()
-            .pipe(catchError(() => EMPTY)),
+            .pipe(
+              timeout(15_000),
+              catchError(() => {
+                this.instrumentError.set("Unable to refresh market prices. Displayed quotes may be out of date; retrying automatically.")
+                this.instrumentLoading.set(false)
+                return EMPTY
+              }),
+            ),
         ),
       )
       .subscribe((instruments) => {
-        this.instruments.set(instruments)
         this.applyInstrumentPrices(instruments)
+        this.instruments.set(instruments)
+        this.instrumentError.set(null)
+        this.instrumentLoading.set(false)
       })
   }
   priceChanged(symbol: string) {
-    return this.priceFlashState()[symbol] ?? false
+    return this.priceFlashState()[this.canonicalTicker(symbol)] ?? false
   }
   private applyInstrumentPrices(instruments: Instrument[]) {
     const nextPrices = new Map(
       instruments.map((instrument) => [
-        instrument.ticker.replace("-", "/"),
-        instrument.askPrice ?? instrument.bidPrice,
+        this.canonicalTicker(instrument.ticker),
+        instrument.bidPrice ?? instrument.askPrice,
       ]),
     )
-    const currentPrices = new Map(this.assetsState().map((asset) => [asset.symbol, asset.price]))
+    const currentPrices = new Map(this.instruments().map((instrument) => [this.canonicalTicker(instrument.ticker), instrument.bidPrice ?? instrument.askPrice]))
     const changed: Record<string, boolean> = {}
     for (const [symbol, price] of nextPrices) {
       if (price != null && currentPrices.has(symbol) && currentPrices.get(symbol) !== price) {
@@ -198,7 +211,7 @@ export default class Store {
     }
     this.priceFlashState.update((flashes) => ({ ...flashes, ...changed }))
     this.assetsState.update((current) => current.map((asset) => {
-      const price = nextPrices.get(asset.symbol)
+      const price = nextPrices.get(this.canonicalTicker(asset.symbol))
       return price == null ? asset : { ...asset, price }
     }))
   }
@@ -218,10 +231,14 @@ export default class Store {
     })
   }
   loadHoldings() {
-    this.http.get<Holding[]>(`${this.apiBasePath}/v1/holdings`).subscribe((records) => {
-      const client = this.session()?.username ?? ""
+    this.refreshHoldings().subscribe({ error: () => undefined })
+  }
+  refreshHoldings() {
+    const client = this.session()?.username
+    return this.http.get<Holding[]>(`${this.apiBasePath}/v1/holdings`).pipe(tap((records) => {
+      if (!client || this.session()?.username !== client) return
       this.positions.set(records.map((record) => this.toPosition(record, client)))
-    })
+    }))
   }
   getHolding(ticker: string) {
     return this.http.get<Holding>(`${this.apiBasePath}/v1/holdings/${encodeURIComponent(ticker)}`)

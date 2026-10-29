@@ -1,0 +1,44 @@
+<div class="page-wrap">
+  <div class="page-intro">
+    <div>
+      <span class="eyebrow">{{ client ? 'Your account' : 'All-client reporting' }}</span>
+      <h1>Orders</h1>
+      <p>{{ client ? 'Manage your portfolio activity in USD.' : 'Review activity across client accounts.' }}</p>
+    </div>
+    @if (client) {
+      <div class="cash-badge">
+        <span>Buying power</span>
+        <strong>{{ store.cash | currency:'USD' }}</strong>
+      </div>
+    }
+  </div>
+  <section class="surface data-surface">
+    <div class="data-table order-table" [class.with-client]="!client" appSortTable #sort="appSortTable">
+      <div class="data-row data-head">
+        <span appSortColumn="id" sortLabel="Order ID">Order ID</span>
+        @if (!client) { <span appSortColumn="client" sortLabel="Client">Client</span> }
+        <span appSortColumn="ticker" sortLabel="Ticker">Ticker</span><span appSortColumn="type" sortLabel="Side">Side</span><span appSortColumn="status" sortLabel="Status">Status</span><span appSortColumn="price" sortLabel="Price">Price</span><span appSortColumn="quantity" sortLabel="Quantity">Quantity</span><span appSortColumn="date" sortKind="date" sortLabel="Date and time">Date &amp; time</span>
+      </div>
+      @if (loading()) {
+        <p class="empty-state" role="status">Loading orders…</p>
+      } @else if (loadError()) {
+        <p class="empty-state" role="alert">{{ loadError() }}</p>
+      } @else {
+        @for (o of sort.rows(orders); track o.id) {
+          <div class="data-row">
+            <strong>{{ o.id }}</strong>
+            @if (!client) { <span>{{ o.client }}</span> }
+            <a [routerLink]="client ? ['/client/ticker', o.ticker] : null">{{ o.ticker }}</a>
+            <span [class]="'side-tag ' + o.type.toLowerCase()">{{ o.type }}</span>
+            <span [class]="'status ' + o.status.toLowerCase()">{{ o.status }}</span>
+            <span>{{ o.price | currency:'USD':'symbol':'1.2-4' }}</span>
+            <span>{{ o.quantity | number:'1.0-6' }}</span>
+            <span>{{ formatOrderDate(o.date) }}</span>
+          </div>
+        } @empty {
+          <p class="empty-state">No orders yet.</p>
+        }
+      }
+    </div>
+  </section>
+</div>

@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms"
 import { Router } from "@angular/router"
 import Store from "../../../core/state/portfolio.store"
 import { TokenStore } from "../../../core/auth/token-store.service"
+import { ThemeService } from "../../../core/theme/theme.service"
 import { Role } from "../../../core/models/data"
 import Brand from "../../../shared/brand/brand.component"
 import Chart from "../../../shared/charts/price-chart.component"
@@ -20,21 +21,27 @@ import { AUTH_BASE_PATH } from "../../../core/api/api-endpoints"
       <section class="auth-brand-panel">
         <app-brand/>
         <div class="auth-message">
-          <span class="eyebrow">One platform. Every market.</span>
-          <h1>Invest with clarity.<br>Move with confidence.</h1>
-          <p>Track markets, manage your portfolio, and trade stocks, crypto, and forex from one workspace.</p>
+          <h1>Simplified investing for stocks, crypto, and forex.</h1>
+          <p>Follow markets, check your portfolio, and manage trades from one workspace.</p>
         </div>
         <div class="auth-market-card">
           <div><span>Market pulse</span><b>USD markets</b></div>
           <div class="pulse-stats">
             <span>S&amp;P 500 <em>+0.82%</em></span>
-            <span>BTC/USD <em>+2.64%</em></span>
-            <span>EUR/USD <em>+0.28%</em></span>
+            <span>BTC-USD <em>+2.64%</em></span>
+            <span>EUR-USD <em>+0.28%</em></span>
           </div>
-          <app-chart/>
+          <app-chart ticker="AAPL" period="1D"/>
+          <ul class="login-tickers" aria-label="Featured companies">
+            <li><img src="assets/tickers/apple.png" alt="Apple" width="32" height="32"><span>AAPL</span></li>
+            <li><img src="assets/tickers/amazon.png" alt="Amazon" width="32" height="32"><span>AMZN</span></li>
+            <li><img src="assets/tickers/google.png" alt="Google" width="32" height="32"><span>GOOGL</span></li>
+            <li><img src="assets/tickers/microsoft.png" alt="Microsoft" width="32" height="32"><span>MSFT</span></li>
+          </ul>
         </div>
       </section>
       <section class="auth-form-panel">
+        <button class="theme-toggle auth-theme-toggle" type="button" [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" [attr.title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" (click)="theme.toggle()"><span aria-hidden="true">{{ theme.isDark() ? '☀' : '☾' }}</span></button>
         <div class="mobile-brand"><app-brand/></div>
         <form class="auth-card" [formGroup]="authForm" (ngSubmit)="submit()">
           <span class="eyebrow">{{ signup() ? 'Create your account' : 'Welcome back' }}</span>
@@ -74,6 +81,7 @@ export default class Auth {
   private readonly apiBasePath = AUTH_BASE_PATH
   private readonly router = inject(Router)
   private readonly tokenStore = inject(TokenStore)
+  readonly theme = inject(ThemeService)
   private readonly store = inject(Store)
 
   roles: Role[] = ["client", "reporter", "admin"]
@@ -167,7 +175,12 @@ export default class Auth {
         this.loading.set(false)
         
         // Saving jwt tokens in token store
-        this.tokenStore.setTokens(res.access_token, res.refresh_token)
+        this.tokenStore.setTokens(
+          res.access_token,
+          res.refresh_token,
+          res.access_token_expires_at,
+          res.refresh_token_expires_at,
+        )
 
         // Sync session in portfolio.store.ts
         const resolvedRole = this.tokenStore.userRole()

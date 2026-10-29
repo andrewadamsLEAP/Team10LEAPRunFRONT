@@ -2,7 +2,10 @@
 @import "./_auth.css";
 @import "./_client.css";
 @import "./_dashboard-markets.css";
+@import "./_news.css";
 @import "./_trade.css";
 @import "./_data-tables.css";
 @import "./_employee-accounts.css";
 @import "./_responsive.css";
+@import "./_chatbert.css";
+@import "./_theme.css";

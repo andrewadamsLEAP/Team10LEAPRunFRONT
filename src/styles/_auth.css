@@ -14,6 +14,10 @@
 .pulse-stats span { display: flex; flex-direction: column; gap: 4px; }
 .pulse-stats em { color: #65d6ad; font-style: normal; font-size: 9px; }
 .auth-market-card .price-chart { height: 80px; }
+.login-tickers { display: flex; flex-wrap: wrap; gap: 12px 24px; list-style: none; margin: 12px 0 0; padding: 14px 0; border-top: 1px solid #ffffff1f; }
+.login-tickers li { display: flex; align-items: center; gap: 8px; color: #e5f3ed; font-size: 11px; font-weight: 600; }
+.login-tickers img { flex: 0 0 32px; width: 32px; height: 32px; padding: 5px; object-fit: contain; border-radius: 6px; background: #fff; }
+.login-tickers img[src$="/amazon.png"] { background: #18221d; }
 .auth-form-panel { display: grid; place-items: center; padding: 40px; background: #f8faf9; }
 .mobile-brand { display: none; }
 .auth-card { width: min(400px, 100%); }

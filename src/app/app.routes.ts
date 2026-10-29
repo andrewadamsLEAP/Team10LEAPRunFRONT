@@ -9,6 +9,8 @@ const loadShell = () =>
   )
 const loadDashboard = () =>
   import("./features/dashboard/pages/dashboard.page").then((m) => m.default)
+const loadNewsPage = () =>
+  import("./features/news/pages/news.page").then((m) => m.default)
 const loadClientAnalyticsPage = () =>
   import("./features/dashboard/pages/client-analytics.page").then(
     (m) => m.default,
@@ -77,6 +79,7 @@ export const routes: Routes = [
     data: { role: "client" },
     children: [
       { path: "home", loadComponent: loadDashboard },
+      { path: "news", loadComponent: loadNewsPage },
       { path: "account", loadComponent: loadProfilePage },
       {
         path: "analytics",

@@ -3,10 +3,6 @@
 .data-row { min-height: 54px; padding: 0 17px; border-top: 1px solid #edf2ef; display: grid; align-items: center; gap: 12px; color: #5a6860; font-size: 9px; }
 .data-row.data-head { min-height: 34px; border: 0; color: #8c9892; text-transform: uppercase; letter-spacing: .06em; font-size: 7px; }
 .data-row strong, .data-row b { color: #29362f; font-weight: 600; }
-.order-table .data-row { grid-template-columns: 1.1fr .8fr .7fr .7fr .8fr .8fr 1.5fr; }
-.order-table.with-client .data-row { grid-template-columns: 1fr .9fr .8fr .6fr .7fr .8fr .7fr 1.4fr; }
-.side-tag { width: fit-content; padding: 3px 7px; border-radius: 10px; background: var(--green-soft); color: var(--green-dark); font-size: 7px; }
-.side-tag.sell { background: #fbeaec; color: #ac444c; }
 .cash-badge { padding: 8px 13px; border: 1px solid #cde5da; border-radius: 6px; background: #edf8f3; display: flex; flex-direction: column; gap: 3px; }
 .cash-badge span { color: #6f7e76; font-size: 7px; text-transform: uppercase; }
 .cash-badge strong { font: 600 12px "Manrope"; }
@@ -14,12 +10,12 @@
 .fund-tabs { display: flex; gap: 3px; padding: 3px; border-radius: 6px; background: #edf2ef; }
 .fund-tabs button { height: 30px; padding: 0 12px; border: 0; border-radius: 4px; background: transparent; color: #718078; font-size: 9px; cursor: pointer; }
 .fund-tabs button.active { background: white; color: var(--green-dark); font-weight: 700; }
-.fund-input { height: 36px; width: 310px; border: 1px solid var(--line); border-radius: 5px; display: flex; align-items: center; padding-left: 10px; color: #738179; }
-.fund-input input { width: 100%; border: 0; padding: 0 7px; outline: 0; }
+.fund-input { height: 36px; width: 310px; border: 1px solid var(--line); border-radius: 5px; display: flex; align-items: center; padding-left: 10px; color: #738179; font-size: 11px; font-weight: 500; }
+.fund-input input { width: 100%; min-width: 0; border: 0; padding: 0 7px; outline: 0; background: transparent; color: var(--ink); font: inherit; }
 .ticker-page-search { width: 250px; height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: #f8faf9; display: flex; align-items: center; gap: 7px; color: #85918b; }
 .ticker-page-search input { width: 100%; border: 0; padding: 0; background: transparent; color: var(--ink); font-size: 10px; outline: 0; }
 .ticker-page-search > span { transform: scaleX(-1); }
-.fund-input button { height: 30px; margin-right: 2px; }
+.fund-input button { height: 30px; margin-right: 2px; flex-shrink: 0; }
 .transaction-table .data-row { grid-template-columns: 1.1fr .9fr 1fr .8fr 1.2fr; }
 .transaction-table.employee-transactions { min-width: 850px; max-height: calc(100vh - 220px); overflow-y: auto; scrollbar-gutter: stable; }
 .transaction-table.employee-transactions .data-row { grid-template-columns: 1.1fr 1fr .9fr 1fr 1.2fr; padding-inline: 22px; column-gap: 24px; }
@@ -52,3 +48,8 @@
 .holding-name small { color: #89958f; font-size: 8px; font-weight: 400; }
 .allocation-bar { display: block; width: 75px; height: 5px; border-radius: 5px; background: #e6ece9; overflow: hidden; }
 .allocation-bar b { display: block; height: 100%; border-radius: inherit; background: var(--green); }
+.sortable-column { cursor: pointer; user-select: none; }
+.sortable-column::after { content: " \2195"; opacity: .5; font-size: .9em; }
+.sortable-column[aria-sort="ascending"]::after { content: " \2191"; opacity: 1; }
+.sortable-column[aria-sort="descending"]::after { content: " \2193"; opacity: 1; }
+.sortable-column:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }

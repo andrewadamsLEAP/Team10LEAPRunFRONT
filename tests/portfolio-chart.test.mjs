@@ -1,0 +1,215 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import { computed, signal } from '@angular/core'
+import { catchError, defer, EMPTY, exhaustMap, firstValueFrom, forkJoin, from, map, merge, mergeMap, of, Subject, switchMap, tap, throwError, timeout, toArray } from 'rxjs'
+import ts from 'typescript'
+
+const read = path => readFile(new URL(`../${path}`, import.meta.url),'utf8')
+function compile(source,names,dependencies) {
+  const {outputText}=ts.transpileModule(source.replace(/export (default )?/g,''),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}})
+  return new Function(...Object.keys(dependencies),`${outputText}\nreturn {${names.join(',')}}`)(...Object.values(dependencies))
+}
+const source = await read('src/app/core/api/portfolio-value.service.ts')
+const helpers = compile(source.slice(source.indexOf('export const portfolioPeriods'),source.indexOf('@Injectable')),
+  ['portfolioPeriods','portfolioRange','portfolioSeries','portfolioHistorySeries','hasMissingPrices','quoteValue'],{})
+const now=Date.parse('2026-10-26T12:00:00Z')
+const historyPoint = (timestamp, invested, complete = true, missingPrices = []) => ({ timestamp, invested, total: 9999, cash: 1000, complete, missingPrices })
+const historyPoints = [
+  historyPoint('2026-10-26T09:00:00Z', 100),
+  historyPoint('2026-10-26T10:00:00Z', null, false, ['AAPL']),
+  historyPoint('2026-10-26T11:00:00Z', 120),
+  historyPoint('2026-10-26T11:00:00Z', 125),
+]
+assert.deepEqual(helpers.portfolioHistorySeries(historyPoints, '1D', now).map(point => point.invested), [100, null, 125])
+assert.equal(helpers.portfolioHistorySeries([historyPoint('2026-10-26T09:00:00Z', 100, true, ['AAPL'])], '1D', now)[0].invested, null)
+assert.equal(helpers.portfolioHistorySeries([historyPoint('2026-10-26T09:00:00Z', 0)], '1D', now)[0].invested, 0)
+assert.deepEqual(helpers.portfolioHistorySeries([], '1D', now), [])
+const points=[0,2,10,60,400].map((days,index)=>({timestamp:new Date(now-days*86400000).toISOString(),cash:100,invested:200,total:300+index,positions:1,oldestQuote:null}))
+for(const [period,length] of [['1D',1],['1W',2],['1M',3],['1Y',4]]) {
+  assert.equal(helpers.portfolioSeries(points,period,now).length,length)
+}
+assert.equal(helpers.portfolioSeries([...points,{timestamp:'bad',total:20},{timestamp:new Date(now+1).toISOString(),total:20}],'1Y',now).length,4)
+const quote=(ticker,bid,ask,recorded='2026-10-26T11:59:00Z')=>({ticker,bid_price:bid,ask_price:ask,recorded_at:recorded})
+assert.equal(helpers.quoteValue([quote('BTC-USD',90,100)],'BTC/USD',now).price,90)
+assert.equal(helpers.quoteValue([quote('DEMO',null,100)],'DEMO',now).price,100)
+assert.equal(helpers.quoteValue([quote('DEMO',1,2,'2026-10-25T00:00:00Z'),quote('DEMO',10,20)],'DEMO',now).price,10)
+assert.throws(()=>helpers.quoteValue([quote('OTHER',10,20)],'DEMO',now),/No usable latest quote/)
+assert.throws(()=>helpers.quoteValue([quote('DEMO',10,20,'2026-10-27T00:00:00Z')],'DEMO',now),/No usable latest quote/)
+assert.throws(()=>helpers.quoteValue([quote('DEMO',null,null)],'DEMO',now),/No usable latest quote/)
+let user={sub:'47',actorType:'client'}
+let profile={clientId:47,cashAmount:'1000'}
+let holdings=[{clientId:47,ticker:'BTC/USD',quantity:2}]
+let prices=[quote('BTC-USD',100,120,new Date(Date.now()-60000).toISOString())]
+const requested=[]
+const providers={
+  http:{get:(path,options)=>{requested.push(options ? {path,options} : path);return of(path === '/api/v1/portfolio/history' ? {currency:'USD',coverage:{complete:true},points:historyPoints} : holdings)}},
+  profile:{getProfile:()=>of(profile)},
+  market:{getLatestPrice:ticker=>{requested.push(ticker);return of(prices)}},
+  token:{currentUser:()=>user},
+}
+const {PortfolioValueService}=compile(source.slice(source.indexOf('export class PortfolioValueService')),['PortfolioValueService'],{
+  inject:key=>providers[key],HttpClient:'http',ClientProfileApiService:'profile',MarketDataService:'market',TokenStore:'token',
+  forkJoin,from,map,mergeMap,of,switchMap,timeout,toArray,quoteValue:helpers.quoteValue,portfolioRange:helpers.portfolioRange,
+})
+const api=new PortfolioValueService()
+assert.equal((await firstValueFrom(api.history('1W', now))).points.length, 4)
+assert.deepEqual(requested.at(-1), {path:'/api/v1/portfolio/history',options:{params:{from:'2026-10-19T12:00:00.000Z',to:'2026-10-26T12:00:00.000Z'}}})
+await firstValueFrom(api.history('1D', now))
+assert.deepEqual(requested.at(-1), {path:'/api/v1/portfolio/history',options:{params:{from:'2026-10-25T12:00:00.000Z',to:'2026-10-26T12:00:00.000Z'}}})
+const observation=await firstValueFrom(api.observe())
+assert.equal(observation.cash,1000)
+assert.equal(observation.invested,200)
+assert.equal(observation.total,1200)
+assert.equal(observation.positions,1)
+assert.ok(requested.includes('/api/v1/holdings'))
+holdings=[]
+assert.equal((await firstValueFrom(api.observe())).total,1000,'Cash-only accounts are still valued')
+profile={clientId:48,cashAmount:1000}
+await assert.rejects(firstValueFrom(api.observe()),/does not belong/)
+profile={clientId:47,cashAmount:1000}
+holdings=[{clientId:48,ticker:'BTC-USD',quantity:2}]
+await assert.rejects(firstValueFrom(api.observe()),/does not belong/)
+holdings=[{clientId:47,ticker:'BTC-USD',quantity:2}]
+prices=[]
+await assert.rejects(firstValueFrom(api.observe()),/Total value is unavailable/)
+profile={clientId:47}
+await assert.rejects(firstValueFrom(api.observe()),/valid cash balance/)
+for (const invalid of [null,{sub:'47',actorType:'employee'},{sub:'bad',actorType:'client'}]) {
+  user=invalid
+  const before=requested.length
+  assert.throws(()=>api.observe(),/signed-in client/)
+  assert.throws(()=>api.history('1D'),/signed-in client/)
+  assert.equal(requested.length,before)
+}
+
+const componentSource=await read('src/app/shared/charts/portfolio-value.component.ts')
+const effects=[]
+let historyFailure={status:400}
+const {PortfolioValueComponent:ErrorPortfolio}=compile(componentSource.slice(componentSource.indexOf('export default class')),['PortfolioValueComponent'],{
+  inject:key=>key === 'api' ? {history:()=>throwError(()=>historyFailure)} : {currentUser:()=>({sub:'47',actorType:'client'})},
+  PortfolioValueService:'api',TokenStore:'token',effect:callback=>effects.push(callback),signal,computed,Subject,
+  portfolioPeriods:helpers.portfolioPeriods,portfolioHistorySeries:helpers.portfolioHistorySeries,hasMissingPrices:helpers.hasMissingPrices,
+  catchError,defer,EMPTY,exhaustMap,map,merge,timer:()=>of(0),
+})
+const failedHistory=new ErrorPortfolio()
+for (const [period,failure,expected] of [
+  ['1D',{status:400},'HTTP 400'],
+  ['1W',{status:404},'HTTP 404'],
+  ['1Y',{name:'TimeoutError'},'request timed out'],
+  ['1M',{status:0},'connection or response error'],
+]) {
+  historyFailure=failure
+  failedHistory.selectPeriod(period)
+  let cleanup
+  effects[0](callback=>{cleanup=callback})
+  assert.ok(failedHistory.historyError().includes(`${period} holdings history (${expected})`))
+  assert.equal(failedHistory.loading(),false)
+  cleanup()
+}
+const {PortfolioValueComponent}=compile(componentSource.slice(componentSource.indexOf('export default class')),['PortfolioValueComponent'],{
+  inject:()=>({}),PortfolioValueService:'api',TokenStore:'token',effect:()=>{},signal,computed,Subject,
+  portfolioPeriods:helpers.portfolioPeriods,portfolioHistorySeries:helpers.portfolioHistorySeries,hasMissingPrices:helpers.hasMissingPrices,
+})
+const component=new PortfolioValueComponent()
+const actualNow=Date.now()
+component.history.set({currency:'USD',coverage:{complete:true},points:[0,2,10,60].map(days=>({...historyPoint(new Date(actualNow-days*86400000).toISOString(),100+days)}))})
+for (const [period,length] of [['1D',1],['1W',2],['1M',3],['1Y',4]]) {
+  component.selectPeriod(period)
+  assert.equal(component.period(),period)
+  assert.equal(component.chart().values.length,length,`${period} must change the actual series range`)
+}
+const shortRangeFixtures=[['1D',25,1],['1W',29,6]].map(([period,count,hours])=>{
+  const gap=Math.floor(count/2)
+  const samples=Array.from({length:count},(_,index)=>historyPoint(
+    new Date(actualNow-(count-1-index)*hours*3600000).toISOString(),
+    index === gap ? null : 1000+index,
+    index !== gap,
+    index === gap ? ['AAPL'] : [],
+  ))
+  component.selectPeriod(period)
+  component.now.set(actualNow)
+  component.history.set({currency:'USD',coverage:{complete:false},points:samples})
+  const data=component.chart()
+  assert.equal(data.values.length,count,`${period} must retain both range endpoints and every backend sample`)
+  assert.equal(data.labels[0],new Date(helpers.portfolioRange(period,actualNow).from).toISOString())
+  assert.equal(data.labels.at(-1),new Date(actualNow).toISOString())
+  assert.equal(data.values[0],1000,'The chart must plot invested, not total or share quantity')
+  assert.equal(data.values[gap],null,`${period} must preserve incomplete valuations as gaps`)
+  assert.equal(component.incomplete(),true)
+  return {period,count,gap,data}
+})
+const chartSource=await read('src/app/shared/analytics/analytics-chart.component.ts')
+component.selectPeriod('1D')
+component.now.set(actualNow)
+component.history.set({currency:'USD',coverage:{complete:true},points:[
+  historyPoint(new Date(actualNow-3600000).toISOString(),1000),
+]})
+component.liveObservations.set([
+  {timestamp:new Date(actualNow-5000).toISOString(),invested:1010},
+  {timestamp:new Date(actualNow).toISOString(),invested:1015},
+])
+assert.deepEqual(component.chart().values,[1000,1010,1015],'1D must plot real observations five seconds apart')
+assert.equal(Date.parse(component.chart().labels.at(-1))-Date.parse(component.chart().labels.at(-2)),5000)
+for (const period of ['1W','1M','1Y']) {
+  component.selectPeriod(period)
+  assert.deepEqual(component.chart().values,[1000],`${period} must remain historical only`)
+}
+component.selectPeriod('1D')
+component.now.set(actualNow)
+component.history.set({currency:'USD',coverage:{complete:true},points:[
+  historyPoint(new Date(actualNow).toISOString(),1016),
+]})
+assert.deepEqual(component.chart().values,[1016],'Backend history replaces overlapping live observations')
+component.liveObservations.set([])
+let chartInput={kind:'pie',labels:['stock','crypto','bitcoin'],values:[600,300,100],format:'money'}
+const {AnalyticsChart}=compile(chartSource.slice(chartSource.indexOf('export default class')),['AnalyticsChart'],{
+  input:Object.assign(value=>()=>value,{required:()=>()=>chartInput}),computed,
+})
+let chart=new AnalyticsChart()
+assert.deepEqual(chart.slices().map(slice=>slice.percent),[60,30,10])
+assert.match(chart.pieDescription(),/bitcoin 10.00%/)
+chartInput={kind:'line',labels:['2026-10-01T00:00:00Z','2026-10-02T00:00:00Z','2026-10-11T00:00:00Z'],values:[1,2,3],format:'number',timeBased:true}
+chart=new AnalyticsChart()
+assert.equal(chart.points()[1].x,95,'Time spacing must be based on elapsed time, not sample index')
+chartInput={kind:'line',labels:['2026-10-01'],values:[1200],format:'money',timeBased:true}
+chart=new AnalyticsChart()
+assert.equal(chart.points()[0].x,355,'One actual observation is a point, not an invented historical line')
+assert.equal(chart.area(),'','Do not draw a filled area for a single point')
+chartInput={kind:'line',labels:['2026-10-01T00:00:00Z','2026-10-02T00:00:00Z'],values:[1200,1300],format:'money',timeBased:true}
+chart=new AnalyticsChart()
+assert.ok(chart.area().startsWith('30,200 '))
+assert.ok(chart.area().endsWith(' 680,200'))
+chartInput={kind:'line',labels:['2026-10-01','2026-10-02','2026-10-03','2026-10-04'],values:[100,null,120,130],format:'money',timeBased:true}
+chart=new AnalyticsChart()
+assert.equal(chart.points().length,3)
+assert.deepEqual(chart.segments().map(segment=>segment.length),[1,2],'Missing prices must break both line and area')
+assert.equal(chart.segmentArea(chart.segments()[0]),'')
+for (const fixture of shortRangeFixtures) {
+  chartInput=fixture.data
+  chart=new AnalyticsChart()
+  assert.equal(chart.points().length,fixture.count-1)
+  assert.deepEqual(chart.segments().map(segment=>segment.length),[fixture.gap,fixture.count-fixture.gap-1])
+  assert.equal(chart.points()[0].x,30)
+  assert.equal(chart.points().at(-1).x,680)
+  assert.ok(chart.points().every(point=>Number.isFinite(point.x)&&Number.isFinite(point.y)),`${fixture.period} coordinates must be finite`)
+}
+
+const storeSource=await read('src/app/core/state/portfolio.store.ts')
+const {Store}=compile(storeSource.slice(storeSource.indexOf('export default class')),['Store'],{
+  signal, assets:[],initialClients:[],initialReporters:[],initialOrders:[],initialTransactions:[],tap,
+})
+const liveStore=new Store({get:()=>of([{clientId:47,ticker:'NEW/USD',quantity:3}])},{})
+liveStore.session.set({role:'client',username:'client'})
+liveStore.positions.set([{client:'client',symbol:'NEW/USD',quantity:2,average:10}])
+liveStore.instruments.set([{ticker:'NEW-USD',bidPrice:100,askPrice:110}])
+assert.equal(liveStore.holdingValue('new/usd',2),200,'Holdings outside the seeded assets must use live instruments')
+assert.equal(liveStore.invested,200)
+liveStore.instruments.set([{ticker:'NEW-USD',bidPrice:125,askPrice:130}])
+assert.equal(liveStore.invested,250,'Market updates must change holdings value')
+await firstValueFrom(liveStore.refreshHoldings())
+assert.equal(liveStore.holdings[0].quantity,3)
+assert.equal(liveStore.invested,375,'Refreshed quantities must affect valuation')
+liveStore.instruments.set([])
+assert.equal(liveStore.holdingValue('NEW/USD',3),null)
+assert.equal(liveStore.invested,null,'Missing prices must not silently become zero')
+console.log('Portfolio/chart tests passed: real cash+quotes, missing values, ownership, all time buttons, pie percentages, and elapsed-time axes.')

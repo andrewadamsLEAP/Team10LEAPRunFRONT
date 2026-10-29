@@ -62,7 +62,7 @@ export type Account = {
   lastName?: string
   cash: number
   role?: string
-  //status: "Active" | "Suspended"
+  status?: "Active" | "Suspended"
 }
 
 export const assets: Asset[] = [
@@ -139,7 +139,7 @@ export const assets: Asset[] = [
     low: 632.84,
   },
   {
-    symbol: "BTC/USD",
+    symbol: "BTC-USD",
     name: "Bitcoin",
     kind: "Crypto",
     price: 104632.8,
@@ -151,7 +151,7 @@ export const assets: Asset[] = [
     low: 100891,
   },
   {
-    symbol: "ETH/USD",
+    symbol: "ETH-USD",
     name: "Ethereum",
     kind: "Crypto",
     price: 3428.12,
@@ -163,7 +163,7 @@ export const assets: Asset[] = [
     low: 3328.18,
   },
   {
-    symbol: "EUR/USD",
+    symbol: "EUR-USD",
     name: "Euro / US Dollar",
     kind: "Forex",
     price: 1.0842,
@@ -175,7 +175,7 @@ export const assets: Asset[] = [
     low: 1.0798,
   },
   {
-    symbol: "GBP/USD",
+    symbol: "GBP-USD",
     name: "British Pound / US Dollar",
     kind: "Forex",
     price: 1.2716,
@@ -202,7 +202,7 @@ export const initialOrders: Order[] = [
   {
     id: "ORD-10481",
     client: "alexm",
-    ticker: "BTC/USD",
+    ticker: "BTC-USD",
     type: "Buy",
     status: "Pending",
     price: 103420,
@@ -222,7 +222,7 @@ export const initialOrders: Order[] = [
   {
     id: "ORD-10479",
     client: "samira",
-    ticker: "EUR/USD",
+    ticker: "EUR-USD",
     type: "Buy",
     status: "Cancelled",
     price: 1.0821,
