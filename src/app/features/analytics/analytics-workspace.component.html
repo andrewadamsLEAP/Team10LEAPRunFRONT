@@ -52,8 +52,8 @@
     }
     @if (loading()) { <span role="status">Reports are updating…</span> }
   </div>
-  <p class="warehouse-note">Analytics are not live and show the latest available warehouse data. Recent trades and account changes may take a few minutes to appear.
-    You can view existing reports immediately—no manual data refresh or ETL run is required.</p>
+  <p class="warehouse-note">Analytics are not live and show the latest available warehouse data. Recent trades and account changes may take a few minutes to appear.    
+  </p>
   <div class="report-grid">
     @for (report of reports(); track report.id) {
       <app-analytics-card [report]="report" (retry)="retryReport($event)" [class.wide]="audience() === 'client' && report.id === 'gainers'" />

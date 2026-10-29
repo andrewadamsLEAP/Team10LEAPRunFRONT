@@ -22,11 +22,7 @@ export default class Chart implements OnChanges, OnDestroy {
   @Input() flat = false
   @Input() period = "1M"
   @Input() ticker = ""
-  @Input() livePrice: number | null = null
-  @Input() liveTimestamp: string | null = null
-  readonly points = signal("")
-  readonly loading = signal(false)
-  readonly error = signal("")
+  @Input() points = "0,120 700,120"
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes["ticker"] || changes["period"]) {

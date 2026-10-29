@@ -1,6 +1,6 @@
 {
   "name": "veridian-angular",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,11 +8,11 @@
     "build": "ng build",
     "generate:api:auth": "openapi-generator-cli generate -i http://localhost:3000/v3/api-docs/swagger.json -g typescript-angular -o src/app/core/api/auth --additional-properties=ngVersion=21.0.0,providedInRoot=true,fileNaming=kebab-case",
     "typecheck": "ngc --noEmit -p tsconfig.app.json",
-    "test": "node tests/accounts.test.mjs && node tests/dashboard.test.mjs && node tests/chatbert.test.mjs && node tests/analytics.test.mjs && node tests/portfolio-chart.test.mjs && node tests/news.test.mjs && node tests/market-refresh.test.mjs && node tests/table-sort.test.mjs",
+    "test": "node tests/accounts.test.mjs && node tests/dashboard.test.mjs && node tests/chatbert.test.mjs && node tests/analytics-values.test.mjs && node tests/analytics.test.mjs && node tests/portfolio-chart.test.mjs && node tests/news.test.mjs && node tests/market-refresh.test.mjs && node tests/table-sort.test.mjs",
     "test:sorting": "node tests/table-sort.test.mjs",
     "test:news": "node tests/news.test.mjs",
     "test:markets": "node tests/market-refresh.test.mjs",
-    "test:analytics": "node tests/analytics.test.mjs",
+    "test:analytics": "node tests/analytics-values.test.mjs && node tests/analytics.test.mjs",
     "check:analytics": "node scripts/check-analytics.mjs"
   },
   "dependencies": {

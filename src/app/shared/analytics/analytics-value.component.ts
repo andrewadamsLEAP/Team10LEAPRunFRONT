@@ -56,6 +56,15 @@ export default class AnalyticsValueComponent {
   display(value: AnalyticsValue | undefined, key = ""): string {
     if (value === null || value === undefined) return "—"
     if (typeof value === "boolean") return value ? "Yes" : "No"
+    if (typeof value === "string" && this.isDateColumn(key)
+      && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i.test(value)) {
+      const date = new Date(value.replace(" ", "T").replace(/(\.\d{3})\d+/, "$1"))
+      if (!Number.isFinite(date.getTime())) return "Invalid timestamp"
+      return date.toLocaleString(undefined, {
+        year: "numeric", month: "short", day: "numeric",
+        hour: "numeric", minute: "2-digit", second: "2-digit", timeZoneName: "short",
+      })
+    }
     if (typeof value === "number") {
       if (/percentage|percent$/.test(key)) return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`
       if (/price|market_value|gain$|cost$|amount|volume|open$|close$|day_low|day_high/.test(key)) {
