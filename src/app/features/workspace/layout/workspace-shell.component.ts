@@ -10,7 +10,7 @@ import {
 import Store, { ClientProfile } from "../../../core/state/portfolio.store"
 import Brand from "../../../shared/brand/brand.component"
 import { TokenStore } from "../../../core/auth/token-store.service"
-import { BASE_PATH } from "../../../core/api/auth"
+import { AUTH_BASE_PATH } from "../../../core/api/api-endpoints"
 
 @Component({
   selector: "app-shell",
@@ -37,7 +37,7 @@ export default class Shell {
   router = inject(Router)
   tokenStore = inject(TokenStore)
   http = inject(HttpClient)
-  apiBasePath = inject(BASE_PATH)
+  apiBasePath = AUTH_BASE_PATH
   menu = false
   clientPages = [
     ["home", "Overview"],

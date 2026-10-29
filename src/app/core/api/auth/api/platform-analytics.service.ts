@@ -1,6 +1,7 @@
 import { Injectable, inject } from "@angular/core"
 import { HttpClient } from "@angular/common/http"
 import { map, Observable } from "rxjs"
+import { ANALYTICS_BASE_PATH } from "../../api-endpoints"
 
 export type PlatformAnalytics = {
   total_clients: number
@@ -68,7 +69,7 @@ export class PlatformAnalyticsService {
 
   getAnalytics(): Observable<PlatformAnalytics> {
     return this.http
-      .get<PlatformAnalyticsResponse>("/analytics-api/api/analytics/")
+      .get<PlatformAnalyticsResponse>(`${ANALYTICS_BASE_PATH}/api/analytics/`)
       .pipe(
         map(({ data }) => ({
           ...data,
@@ -79,13 +80,13 @@ export class PlatformAnalyticsService {
 
   getTrends(): Observable<PlatformTrend[]> {
     return this.http
-      .get<PlatformTrendsResponse>("/analytics-api/api/analytics/trends")
+      .get<PlatformTrendsResponse>(`${ANALYTICS_BASE_PATH}/api/analytics/trends`)
       .pipe(map(({ data }) => data))
   }
 
   getOrderStatus(): Observable<ClientOrderStatus[]> {
     return this.http
-      .get<ClientOrderStatusResponse>("/analytics-api/api/analytics/order-status")
+      .get<ClientOrderStatusResponse>(`${ANALYTICS_BASE_PATH}/api/analytics/order-status`)
       .pipe(map(({ data }) => data))
   }
 }

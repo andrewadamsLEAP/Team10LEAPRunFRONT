@@ -9,7 +9,7 @@ import { Role } from "../../../core/models/data"
 import Brand from "../../../shared/brand/brand.component"
 import Chart from "../../../shared/charts/price-chart.component"
 
-import { BASE_PATH } from "../../../core/api/auth"
+import { AUTH_BASE_PATH } from "../../../core/api/api-endpoints"
 
 @Component({
   selector: "app-auth",
@@ -71,7 +71,7 @@ export default class Auth {
   // Dependency injection
   private readonly fb = inject(FormBuilder)
   private readonly http = inject(HttpClient)
-  private readonly apiBasePath = inject(BASE_PATH)
+  private readonly apiBasePath = AUTH_BASE_PATH
   private readonly router = inject(Router)
   private readonly tokenStore = inject(TokenStore)
   private readonly store = inject(Store)

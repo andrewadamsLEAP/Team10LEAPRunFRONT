@@ -16,6 +16,7 @@ import {
   Instrument,
 } from "../models/data"
 import { MarketDataService } from "../api/market-data.service"
+import { API_V1_BASE_PATH } from "../api/api-endpoints"
 
 export type Position = {
   client: string
@@ -66,6 +67,7 @@ export default class Store {
     private readonly http: HttpClient,
     private readonly marketDataService: MarketDataService,
   ) {}
+  private readonly apiBasePath = API_V1_BASE_PATH
   private marketPolling?: Subscription
   private readonly assetsState = signal(structuredClone(assets))
   private readonly priceFlashState = signal<Record<string, boolean>>({})
@@ -216,22 +218,22 @@ export default class Store {
     })
   }
   loadHoldings() {
-    this.http.get<Holding[]>("/api/v1/holdings").subscribe((records) => {
+    this.http.get<Holding[]>(`${this.apiBasePath}/v1/holdings`).subscribe((records) => {
       const client = this.session()?.username ?? ""
       this.positions.set(records.map((record) => this.toPosition(record, client)))
     })
   }
   getHolding(ticker: string) {
-    return this.http.get<Holding>(`/api/v1/holdings/${encodeURIComponent(ticker)}`)
+    return this.http.get<Holding>(`${this.apiBasePath}/v1/holdings/${encodeURIComponent(ticker)}`)
   }
   getHoldingQuantity(ticker: string) {
     return this.http.get<QuantityResponse>(
-      `/api/v1/holdings/quantity?ticker=${encodeURIComponent(ticker)}`,
+      `${this.apiBasePath}/v1/holdings/quantity?ticker=${encodeURIComponent(ticker)}`,
     )
   }
   loadClientTransactions() {
     this.http
-      .get<BackendTransaction[]>("/api/v1/trading/transactions")
+      .get<BackendTransaction[]>(`${this.apiBasePath}/v1/trading/transactions`)
       .subscribe((records) => {
         const client = this.session()?.username ?? ""
         this.transactions.set(records.map((record) => this.toTransaction(record, client)))
@@ -249,7 +251,7 @@ export default class Store {
     const endpoint = type === "Deposit" ? "deposit" : "withdrawal"
     return this.http
       .post<BackendTransaction>(
-        `/api/v1/trading/transactions/${endpoint}?amount=${encodeURIComponent(amount)}`,
+        `${this.apiBasePath}/v1/trading/transactions/${endpoint}?amount=${encodeURIComponent(amount)}`,
         null,
       )
       .pipe(

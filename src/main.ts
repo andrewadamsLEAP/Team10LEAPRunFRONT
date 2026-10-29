@@ -5,6 +5,7 @@ import { provideHttpClient, withInterceptors } from "@angular/common/http"
 import { routes } from "./app/app.routes"
 import { authInterceptor } from "./app/core/auth/auth.interceptor"
 import { BASE_PATH } from "./app/core/api/auth"
+import { API_V1_BASE_PATH } from "./app/core/api/api-endpoints"
 
 
 @Component({
@@ -22,6 +23,6 @@ bootstrapApplication(App, {
     provideHttpClient(
       withInterceptors([authInterceptor])
     ),
-    { provide: BASE_PATH, useValue: '/api' },
+    { provide: BASE_PATH, useValue: API_V1_BASE_PATH },
   ],
 }).catch(console.error)

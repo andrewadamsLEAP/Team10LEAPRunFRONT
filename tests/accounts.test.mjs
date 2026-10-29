@@ -43,8 +43,9 @@ class FakeHttpClient {
 
   get(url) {
     this.requests.push({ method: "GET", url })
-    if (url === "/api/v1/trading/market-data/prices") return of(backendMarketPrices)
-    if (url === "/api/v1/holdings") return of(backendHoldings)
+    const path = new URL(url, "http://localhost").pathname
+    if (path.endsWith("/api/v1/trading/market-data/prices")) return of(backendMarketPrices)
+    if (path.endsWith("/api/v1/holdings")) return of(backendHoldings)
     if (url.includes("/api/v1/holdings/quantity")) return of({ quantity: 36 })
     if (url.includes("/api/v1/holdings/AAPL")) return of(backendHoldings[0])
     return of(backendTransactions)
@@ -52,7 +53,7 @@ class FakeHttpClient {
 
   post(url) {
     this.requests.push({ method: "POST", url })
-    const amount = Number(new URL(`http://localhost${url}`).searchParams.get("amount"))
+    const amount = Number(new URL(url, "http://localhost").searchParams.get("amount"))
     return of({
       transactionId: this.requests.length,
       clientId: 47,
@@ -80,12 +81,14 @@ try {
     fileURLToPath(new URL("../../node_modules", import.meta.url)),
     join(temporary, "node_modules"),
   )
-  for (const name of ["data", "store"]) {
+  for (const name of ["data", "api-endpoints", "store"]) {
+    const sourcePath = {
+      data: "../src/app/core/models/data.ts",
+      "api-endpoints": "../src/app/core/api/api-endpoints.ts",
+      store: "../src/app/core/state/portfolio.store.ts",
+    }[name]
     const source = await readFile(
-      new URL(
-        `../src/app/${name === "data" ? "core/models/data" : "core/state/portfolio.store"}.ts`,
-        import.meta.url,
-      ),
+      new URL(sourcePath, import.meta.url),
       "utf8",
     )
     const { outputText } = ts.transpileModule(source, {
@@ -95,13 +98,12 @@ try {
         experimentalDecorators: true,
       },
     })
-    await writeFile(
-      join(temporary, `${name}.mjs`),
-      outputText.replaceAll(
-        name === "store" ? '"../models/data"' : '"./data"',
-        name === "store" ? '"./data.mjs"' : '"./data.mjs"',
-      ),
-    )
+    const output = name === "store"
+      ? outputText
+          .replaceAll('"../models/data"', '"./data.mjs"')
+          .replaceAll('"../api/api-endpoints"', '"./api-endpoints.mjs"')
+      : outputText
+    await writeFile(join(temporary, `${name}.mjs`), output)
   }
   const { default: Store } = await import(
     pathToFileURL(join(temporary, "store.mjs"))
@@ -144,7 +146,7 @@ try {
   assert.equal(store.holdings[0].quantity, 1)
   store.loadClientTransactions()
   assert.equal(store.cash, 1000)
-  assert.equal(http.requests.at(-1).url, "/api/v1/trading/transactions")
+  assert.ok(http.requests.at(-1).url.endsWith("/api/v1/trading/transactions"))
   assert.equal(
     http.requests.some((request) => request.url.includes("amount=1000")),
     true,

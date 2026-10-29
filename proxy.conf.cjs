@@ -1,7 +1,7 @@
 module.exports = [
   {
     context: ["/analytics-api"],
-    target: "http://localhost:5000",
+    target: "http://54.80.207.176:5000",
     secure: false,
     changeOrigin: true,
     pathRewrite: {
@@ -10,13 +10,13 @@ module.exports = [
   },
   {
     context: ["/api/v1"],
-    target: "http://localhost:8085",
+    target: "http://54.80.207.176:8085",
     secure: false,
     changeOrigin: true,
   },
   {
     context: ["/api"],
-    target: "http://localhost:3000",
+    target: "http://54.80.207.176:3000",
     secure: false,
     changeOrigin: true,
     pathRewrite: {
